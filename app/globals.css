@@ -1,0 +1,25 @@
+:root { --navy:#0f1f3d; --gold:#c9a227; --ink:#1b1b1b; --muted:#5d6472; --line:#e3e6ec; --bg:#f7f8fb; }
+* { box-sizing:border-box; }
+body { margin:0; font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif; color:var(--ink); background:var(--bg); }
+a { color:var(--navy); }
+header.top { background:var(--navy); color:#fff; padding:14px 16px; display:flex; gap:16px; align-items:center; flex-wrap:wrap; }
+header.top a { color:#fff; text-decoration:none; font-size:15px; }
+header.top .brand { font-weight:700; font-size:19px; margin-right:auto; }
+header.top .brand span { color:var(--gold); }
+main { max-width:960px; margin:0 auto; padding:20px 16px 60px; }
+.card { background:#fff; border:1px solid var(--line); border-radius:10px; padding:16px; margin-bottom:14px; }
+.muted { color:var(--muted); font-size:14px; }
+.tag { display:inline-block; font-size:12px; padding:2px 8px; border-radius:99px; background:#eef1f7; margin-right:6px; }
+.tag.gold { background:#f6edcc; }
+form.stack { display:grid; gap:10px; }
+label { font-size:14px; display:grid; gap:4px; }
+input, select, textarea { font:inherit; padding:9px 10px; border:1px solid #cfd4dd; border-radius:8px; width:100%; background:#fff; }
+textarea { min-height:110px; }
+button, .btn { font:inherit; background:var(--navy); color:#fff; border:0; border-radius:8px; padding:10px 16px; cursor:pointer; text-decoration:none; display:inline-block; }
+button.gold, .btn.gold { background:var(--gold); color:var(--navy); font-weight:600; }
+button.ghost { background:#fff; color:var(--navy); border:1px solid var(--navy); }
+table { width:100%; border-collapse:collapse; font-size:14px; }
+td, th { text-align:left; padding:8px 6px; border-bottom:1px solid var(--line); vertical-align:top; }
+.row { display:flex; gap:10px; flex-wrap:wrap; align-items:center; }
+.grid2 { display:grid; grid-template-columns:repeat(auto-fit,minmax(260px,1fr)); gap:14px; }
+.notice { background:#fff8e1; border:1px solid #f0d77c; padding:10px 12px; border-radius:8px; font-size:14px; }
