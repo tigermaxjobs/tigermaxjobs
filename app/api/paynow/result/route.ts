@@ -16,6 +16,11 @@ export async function POST(req: Request) {
     await db.from('payments').update({ status: status?.status ?? 'unknown' }).eq('id', pay.id);
     return NextResponse.json({ ok: true });
   }
+  if (pay.candidate_id) {
+    await db.from('payments').update({ status: 'paid', paid_at: new Date().toISOString() }).eq('id', pay.id);
+    await db.from('candidates').update({ offshore_registered_at: new Date().toISOString(), modes: ['onsite', 'remote', 'offshore'] }).eq('id', pay.candidate_id);
+    return NextResponse.json({ ok: true });
+  }
   const plan = PLANS[pay.plan as PlanKey];
   const { data: e } = await db.from('employers').select('listing_credits').eq('id', pay.employer_id).single();
   await db.from('payments').update({ status: 'paid', paid_at: new Date().toISOString() }).eq('id', pay.id);
