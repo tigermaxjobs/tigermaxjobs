@@ -1,7 +1,8 @@
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { currentUser } from '@/lib/supabase';
-import { saveCandidate } from '@/app/actions';
+import { saveCandidate, startCandidatePayment } from '@/app/actions';
+import { CANDIDATE_FEES } from '@/lib/plans';
 
 export const dynamic = 'force-dynamic';
 
@@ -30,6 +31,25 @@ export default async function Candidate({ searchParams }: { searchParams: Record
           {!apps?.length && <tr><td colSpan={4} className="muted">No applications yet.</td></tr>}
         </tbody></table>
       </div>
+
+      <h2 id="offshore">Offshore &amp; online placement</h2>
+      {searchParams.paid && <p className="notice">Thank you. Your registration is confirmed as soon as Paynow confirms the payment. Our team will contact you.</p>}
+      {c?.offshore_registered_at ? (
+        <div className="card"><span className="tag gold">Registered</span>
+          <p style={{ marginBottom: 0 }}>You are registered for offshore and online placement since {new Date(c.offshore_registered_at).toLocaleDateString('en-GB')}. Our team will contact you about verified jobs outside Zimbabwe.</p></div>
+      ) : (
+        <form action={startCandidatePayment} className="card stack">
+          <div className="row" style={{ justifyContent: 'space-between' }}>
+            <div><b>{CANDIDATE_FEES.offshore.name}</b>
+              <p className="muted" style={{ margin: '4px 0 0' }}>We look into jobs outside Zimbabwe, verify they are legitimate, facilitate review by the Office of the President and Cabinet (OPC), and handle other logistics until you travel and start work. Additional agency fees may apply.</p></div>
+            <div style={{ fontSize: 30, fontWeight: 800 }}>US${CANDIDATE_FEES.offshore.amount}</div>
+          </div>
+          <label className="row" style={{ display: 'flex' }}><input type="checkbox" name="agree" required style={{ width: 'auto' }} />
+            I understand the US${CANDIDATE_FEES.offshore.amount} registration fee is non-refundable and that additional agency fees may apply.</label>
+          <div className="row"><button className="gold">Pay with Paynow</button><span className="muted">EcoCash, OneMoney, Visa/Mastercard</span></div>
+          <p className="muted" style={{ margin: 0 }}>Payments are processed by Paynow through our payments partner, Caselink Zimbabwe.</p>
+        </form>
+      )}
 
       <h2>My CV profile</h2>
       <form action={saveCandidate} className="card stack">
