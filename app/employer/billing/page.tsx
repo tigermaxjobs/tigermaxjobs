@@ -23,7 +23,7 @@ export default async function Billing({ searchParams }: { searchParams: Record<s
             <h3 style={{ margin: 0 }}>{p.name}</h3>
             <div style={{ fontSize: 26, fontWeight: 700 }}>US${p.amount}</div>
             <button className="gold">Pay with Paynow</button>
-            <span className="muted">EcoCash, OneMoney, Visa/Mastercard</span>
+            <span className="muted">EcoCash, OneMoney, Visa/Mastercard. Payments are processed by Paynow through our payments partner, Caselink Zimbabwe.</span>
           </form>
         ))}
       </div>
