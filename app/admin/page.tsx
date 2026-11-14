@@ -15,12 +15,21 @@ export default async function Office({ searchParams }: { searchParams: Record<st
     sb.from('candidates').select('id', { count: 'exact', head: true }),
     sb.from('jobs').select('id', { count: 'exact', head: true }).eq('status', 'live'),
   ]);
+  const { data: offshore } = await sb.from('candidates').select('id,full_name,email,phone,has_passport,offshore_registered_at')
+    .not('offshore_registered_at', 'is', null).order('offshore_registered_at', { ascending: false }).limit(100);
   return (
     <>
       {searchParams.sent && <p className="notice">Application sent.</p>}
       {searchParams.error && <p className="notice">{searchParams.error}</p>}
       <h1>Office</h1>
       <p className="muted">{candidates ?? 0} candidates · {live ?? 0} live jobs</p>
+
+      <h2>Offshore registrations paid ({offshore?.length ?? 0})</h2>
+      <div className="card"><table><thead><tr><th>Candidate</th><th>Contact</th><th>Passport</th><th>Paid</th></tr></thead><tbody>
+        {(offshore || []).map((c: any) => <tr key={c.id}><td>{c.full_name}</td><td>{c.phone}<div className="muted">{c.email}</div></td>
+          <td>{c.has_passport}</td><td>{new Date(c.offshore_registered_at).toLocaleDateString('en-GB')}</td></tr>)}
+        {!offshore?.length && <tr><td colSpan={4} className="muted">No paid offshore registrations yet.</td></tr>}
+      </tbody></table></div>
 
       <h2>Applications ready to send ({ready?.length ?? 0})</h2>
       <div className="card"><table><thead><tr><th>Candidate</th><th>Job</th><th>Match</th><th></th></tr></thead><tbody>
