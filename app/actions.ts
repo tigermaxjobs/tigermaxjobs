@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { userClient, currentUser, adminClient } from '@/lib/supabase';
 import { makeAlias } from '@/lib/mail';
-import { PLANS, PlanKey } from '@/lib/plans';
+import { PLANS, PlanKey, CANDIDATE_FEES } from '@/lib/plans';
 import { paynow } from '@/lib/paynow';
 import { sendPrepared } from '@/lib/apply';
 
@@ -138,6 +138,27 @@ export async function startPayment(f: FormData) {
   const resp = await pn.send(payment);
   if (!resp?.success) redirect('/employer/billing?error=' + encodeURIComponent(resp?.error || 'Paynow error'));
   await adminClient().from('payments').insert({ employer_id: e.id, plan, amount: p.amount, reference, poll_url: resp.pollUrl });
+  redirect(resp.redirectUrl);
+}
+
+// Job seeker pays the non-refundable offshore registration fee.
+export async function startCandidatePayment(f: FormData) {
+  const { sb, user, role } = await currentUser();
+  if (!user) redirect('/login?as=candidate');
+  if (role !== 'candidate') redirect('/');
+  const back = '/candidate';
+  if (s(f, 'agree') !== 'on') redirect(back + '?error=' + encodeURIComponent('Please confirm you understand the fee is non-refundable.') + '#offshore');
+  if (!process.env.PAYNOW_INTEGRATION_ID) redirect(back + '?error=' + encodeURIComponent('Online payment is being set up. Please contact the Tigermax office on WhatsApp +263 77 133 1008 to register.') + '#offshore');
+  const fee = CANDIDATE_FEES.offshore;
+  const { data: c } = await sb.from('candidates').select('id, email').eq('user_id', user.id).maybeSingle();
+  if (!c) redirect(back + '?error=' + encodeURIComponent('Save your CV profile first, then register.') + '#offshore');
+  const reference = `TMJ-OFF-${Date.now().toString(36).toUpperCase()}`;
+  const pn = paynow('/candidate?paid=1#offshore');
+  const payment = pn.createPayment(reference, c.email || user.email);
+  payment.add(fee.name, fee.amount);
+  const resp = await pn.send(payment);
+  if (!resp?.success) redirect(back + '?error=' + encodeURIComponent(resp?.error || 'Paynow error') + '#offshore');
+  await adminClient().from('payments').insert({ candidate_id: c.id, plan: 'offshore', amount: fee.amount, reference, poll_url: resp.pollUrl });
   redirect(resp.redirectUrl);
 }
 
