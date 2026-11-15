@@ -46,7 +46,7 @@ export default async function Candidate({ searchParams }: { searchParams: Record
           </div>
           <label className="row" style={{ display: 'flex' }}><input type="checkbox" name="agree" required style={{ width: 'auto' }} />
             I understand the US${CANDIDATE_FEES.offshore.amount} registration fee is non-refundable and that additional agency fees may apply.</label>
-          <div className="row"><button className="gold">Pay with Paynow</button><span className="muted">EcoCash, OneMoney, Visa/Mastercard</span></div>
+          <div className="row"><button className="gold">Pay with Paynow</button><span className="muted">EcoCash, Visa/Mastercard</span></div>
           <p className="muted" style={{ margin: 0 }}>Payments are processed by Paynow through our payments partner, Caselink Zimbabwe.</p>
         </form>
       )}
