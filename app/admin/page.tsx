@@ -15,6 +15,11 @@ export default async function Office({ searchParams }: { searchParams: Record<st
     sb.from('candidates').select('id', { count: 'exact', head: true }),
     sb.from('jobs').select('id', { count: 'exact', head: true }).eq('status', 'live'),
   ]);
+  const q = (searchParams.q || '').replace(/[%,()]/g, '').trim();
+  let cvq = sb.from('candidates').select('id,full_name,email,phone,headline,location,categories,modes,has_passport,source,created_at')
+    .order('created_at', { ascending: false }).limit(200);
+  if (q) cvq = cvq.or(`full_name.ilike.%${q}%,headline.ilike.%${q}%,email.ilike.%${q}%`);
+  const { data: bank } = await cvq;
   const { data: offshore } = await sb.from('candidates').select('id,full_name,email,phone,has_passport,offshore_registered_at')
     .not('offshore_registered_at', 'is', null).order('offshore_registered_at', { ascending: false }).limit(100);
   return (
@@ -23,6 +28,21 @@ export default async function Office({ searchParams }: { searchParams: Record<st
       {searchParams.error && <p className="notice">{searchParams.error}</p>}
       <h1>Office</h1>
       <p className="muted">{candidates ?? 0} candidates · {live ?? 0} live jobs</p>
+
+      <h2 id="cv-bank">CV bank ({candidates ?? 0})</h2>
+      <form className="search" action="/admin#cv-bank" style={{ marginBottom: 14 }}>
+        <input name="q" placeholder="Search name, field or email" defaultValue={q} aria-label="Search candidates" />
+        <button>Search</button>
+      </form>
+      <div className="card" style={{ overflowX: 'auto' }}><table><thead><tr><th>Candidate</th><th>Contact</th><th>Fields</th><th>Wants</th></tr></thead><tbody>
+        {(bank || []).map((c: any) => <tr key={c.id}>
+          <td><b>{c.full_name}</b><div className="muted">{c.headline}{c.location ? ` · ${c.location}` : ''}</div></td>
+          <td>{c.phone || <span className="muted">no phone</span>}<div className="muted">{c.email || <span className="tag gold">email missing</span>}</div></td>
+          <td className="muted">{(c.categories || []).slice(0, 4).join(', ')}</td>
+          <td className="muted">{(c.modes || []).join(', ')}{c.has_passport === 'yes' ? ' · passport' : ''}</td>
+        </tr>)}
+        {!bank?.length && <tr><td colSpan={4} className="muted">{q ? 'No candidates match.' : 'No candidates yet.'}</td></tr>}
+      </tbody></table></div>
 
       <h2>Offshore registrations paid ({offshore?.length ?? 0})</h2>
       <div className="card"><table><thead><tr><th>Candidate</th><th>Contact</th><th>Passport</th><th>Paid</th></tr></thead><tbody>
