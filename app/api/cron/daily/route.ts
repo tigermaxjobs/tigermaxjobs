@@ -17,7 +17,10 @@ export async function GET(req: Request) {
   if (!process.env.ANTHROPIC_API_KEY) return NextResponse.json({ today, matching: 'skipped: no ANTHROPIC_API_KEY' });
 
   const { data: jobs } = await db.from('jobs').select('*').eq('status', 'live');
-  const { data: cands } = await db.from('candidates').select('*').eq('status', 'active').not('consent_at', 'is', null);
+  // Same rule as the database function candidate_is_matchable: active and open for hire
+  // (open, or employed but open). "Employed, not open for hire" candidates are never matched or auto-applied.
+  const { data: cands } = await db.from('candidates').select('*').eq('status', 'active')
+    .in('hire_status', ['open', 'employed_open']).not('consent_at', 'is', null);
   const { data: existing } = await db.from('applications').select('job_id, candidate_id');
   const done = new Set((existing || []).map(a => a.job_id + ':' + a.candidate_id));
   const minAuto = Number(process.env.AUTO_APPLY_MIN_SCORE || 65);
@@ -30,13 +33,15 @@ export async function GET(req: Request) {
     const m = await scoreAndDraft(c, job);
     if (!m || m.score < 60) continue;
     const platform = job.apply_method === 'platform';
-    const auto = c.auto_apply && m.score >= minAuto;
+    // Auto-apply only for job types the candidate chose (roughFit already requires this) and the 65% threshold.
+    const auto = c.auto_apply && (c.modes || []).includes(job.work_mode) && m.score >= minAuto;
     const { data: a } = await db.from('applications').insert({
       job_id: job.id, candidate_id: c.id, score: m.score, why: m.why, gaps: m.gaps, letter: m.letter,
       stage: auto && platform ? 'applied' : 'ready', sent_via: auto && platform ? 'platform' : null,
       sent_at: auto && platform ? new Date().toISOString() : null,
     }).select('id').single();
     matches++;
+    // One email per job: each application is sent on its own; jobs are never bundled into one email.
     if (a && auto && !platform && job.apply_email && process.env.MAILGUN_API_KEY) { const r = await sendPrepared(a.id); if (r.ok) sent++; }
   }
   return NextResponse.json({ today, aiCalls: calls, newMatches: matches, autoSent: sent });
