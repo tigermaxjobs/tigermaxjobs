@@ -27,7 +27,7 @@ const FAQ = [
   { q: 'Which email do applications come from?', a: 'Each candidate gets a personal Tigermax application address. Employers reply to that address and we forward the reply to your own email. We keep only the date, sender and subject, never the message itself.' },
   { q: 'Can I find jobs outside Zimbabwe?', a: 'Yes. Tell us whether you want jobs in Zimbabwe, online and remote work, or jobs abroad, and we match you to all three.' },
   { q: 'Who can see my CV?', a: 'Your CV is stored privately. We share it only with employers you are applying to. You can ask us to delete your data at any time.' },
-  { q: 'How do employers pay?', a: 'Through Paynow: EcoCash, OneMoney or Visa/Mastercard. You can also arrange payment with the office and we add your listings for you.' },
+  { q: 'How do employers pay?', a: 'Through Paynow: EcoCash or Visa/Mastercard. You can also arrange payment with the office and we add your listings for you.' },
   { q: 'Is Tigermax a registered agency?', a: 'Yes. Tigermax Jobs is a youth-owned HR support and recruitment agency licensed by the Ministry of Public Service, Labour and Social Welfare (MPSLSW), based at Anchor House in Harare.' },
 ];
 
@@ -255,7 +255,7 @@ export default async function Home() {
               </div>
             ))}
           </div>
-          <p className="muted center" style={{ marginTop: 18 }}>Pay with EcoCash, OneMoney or Visa/Mastercard through Paynow. Payments are processed by Paynow through our payments partner, Caselink Zimbabwe. Prices in US dollars.</p>
+          <p className="muted center" style={{ marginTop: 18 }}>Pay with EcoCash or Visa/Mastercard through Paynow. Payments are processed by Paynow through our payments partner, Caselink Zimbabwe. Prices in US dollars.</p>
         </div>
       </section>
 
