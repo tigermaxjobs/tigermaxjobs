@@ -55,18 +55,65 @@ export async function saveCandidate(f: FormData) {
     if (up.error) redirect('/candidate?error=' + encodeURIComponent(up.error.message));
   }
   const full_name = s(f, 'full_name');
+  const modes = f.getAll('modes').map(String).filter(m => ['onsite', 'remote', 'offshore'].includes(m));
+  if (!modes.length) redirect('/candidate?error=' + encodeURIComponent('Please tick at least one job type: Zimbabwe, Online or Abroad.'));
+  const has_passport = s(f, 'has_passport');
+  if (!['yes', 'no', 'unknown'].includes(has_passport)) redirect('/candidate?error=' + encodeURIComponent('Please answer the passport question.'));
+  // Hire status and the extra-notes box are asked on first sign-up; afterwards the "My status" card and
+  // "Add to my CV" section on the candidate page update them.
+  const extra: Record<string, any> = {};
+  if (f.has('hire_status')) {
+    const hs = s(f, 'hire_status');
+    if (!HIRE_STATUSES.includes(hs)) redirect('/candidate?error=' + encodeURIComponent('Please choose your hire status.'));
+    extra.hire_status = hs; extra.hire_status_updated_at = new Date().toISOString();
+  }
+  if (f.has('candidate_notes')) extra.candidate_notes = s(f, 'candidate_notes') || null;
   const row = {
     user_id: user.id, full_name, email: user.email!, phone: s(f, 'phone'), location: s(f, 'location'),
     headline: s(f, 'headline'), categories: list(s(f, 'categories').replace(/,/g, ';')),
-    modes: f.getAll('modes').map(String), has_passport: s(f, 'has_passport') || 'unknown',
+    modes, has_passport,
     cv_text: extracted || s(f, 'cv_text') || (existing ? undefined : null), cv_path, auto_apply: !!f.get('auto_apply'),
     consent_at: new Date().toISOString(), truthful_at: new Date().toISOString(),
     apply_alias: existing?.apply_alias ?? makeAlias(full_name),
+    ...extra,
   };
   const res = existing ? await sb.from('candidates').update(row).eq('id', existing.id) : await sb.from('candidates').insert(row);
   if (res.error) redirect('/candidate?error=' + encodeURIComponent(res.error.message));
   revalidatePath('/candidate');
   redirect('/candidate?saved=1');
+}
+
+const HIRE_STATUSES = ['open', 'employed_open', 'employed_not_open'];
+
+// "My status" card: candidate confirms or changes hire status (resets the 45-day reminder).
+export async function setHireStatus(f: FormData) {
+  const { sb, user } = await currentUser();
+  if (!user) redirect('/login');
+  const status = s(f, 'hire_status');
+  if (!HIRE_STATUSES.includes(status)) redirect('/candidate?error=' + encodeURIComponent('Please choose one of the three options.'));
+  const { data: c } = await sb.from('candidates').select('id').eq('user_id', user.id).maybeSingle();
+  if (!c) redirect('/candidate?error=' + encodeURIComponent('Save your CV profile first.'));
+  const { error } = await sb.rpc('set_hire_status', { cand: c.id, new_status: status });
+  if (error) redirect('/candidate?error=' + encodeURIComponent(error.message));
+  revalidatePath('/candidate');
+  redirect('/candidate?status=1');
+}
+
+// "Add to my CV / answer questions": answers to the CV questions plus free notes.
+export async function saveNotes(f: FormData) {
+  const { sb, user } = await currentUser();
+  if (!user) redirect('/login');
+  const { data: c } = await sb.from('candidates').select('id, issues').eq('user_id', user.id).maybeSingle();
+  if (!c) redirect('/candidate?error=' + encodeURIComponent('Save your CV profile first.'));
+  const answers: Record<string, string> = {};
+  ((c.issues as any[]) || []).forEach((q, i) => {
+    const a = s(f, `answer_${i}`);
+    if (a && q?.question) answers[q.question] = a;
+  });
+  const { error } = await sb.rpc('save_candidate_notes', { cand: c.id, notes: s(f, 'notes'), answers });
+  if (error) redirect('/candidate?error=' + encodeURIComponent(error.message));
+  revalidatePath('/candidate');
+  redirect('/candidate?notes=1#add-to-cv');
 }
 
 export async function applyToJob(f: FormData) {
