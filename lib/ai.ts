@@ -27,6 +27,7 @@ export async function scoreAndDraft(candidate: any, job: any): Promise<Match | n
         name: candidate.full_name, location: candidate.location, headline: candidate.headline,
         categories: candidate.categories, modes: candidate.modes, passport: candidate.has_passport,
         profile: candidate.profile, cv_text: (candidate.cv_text || '').slice(0, 12000),
+        candidate_notes: candidate.candidate_notes || undefined, answers_to_cv_questions: candidate.gap_answers || undefined,
       })}` }],
     }),
   });
