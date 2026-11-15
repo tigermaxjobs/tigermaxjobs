@@ -6,6 +6,7 @@ import { makeAlias } from '@/lib/mail';
 import { PLANS, PlanKey, CANDIDATE_FEES } from '@/lib/plans';
 import { paynow } from '@/lib/paynow';
 import { sendPrepared } from '@/lib/apply';
+import { extractCvText } from '@/lib/cvtext';
 
 const s = (f: FormData, k: string) => String(f.get(k) ?? '').trim();
 const list = (v: string) => v.split(/\n|;/).map(x => x.trim()).filter(Boolean);
@@ -43,8 +44,10 @@ export async function saveCandidate(f: FormData) {
 
   const { data: existing } = await sb.from('candidates').select('id, apply_alias, cv_path').eq('user_id', user.id).maybeSingle();
   let cv_path = existing?.cv_path ?? null;
+  let extracted = '';
   const file = f.get('cv') as File | null;
   if (file && file.size > 0) {
+    extracted = await extractCvText(file);
     if (file.size > 5 * 1024 * 1024) redirect('/candidate?error=' + encodeURIComponent('CV must be under 5 MB.'));
     const ext = (file.name.split('.').pop() || 'pdf').toLowerCase();
     cv_path = `${user.id}/cv-${Date.now()}.${ext}`;
@@ -56,7 +59,7 @@ export async function saveCandidate(f: FormData) {
     user_id: user.id, full_name, email: user.email!, phone: s(f, 'phone'), location: s(f, 'location'),
     headline: s(f, 'headline'), categories: list(s(f, 'categories').replace(/,/g, ';')),
     modes: f.getAll('modes').map(String), has_passport: s(f, 'has_passport') || 'unknown',
-    cv_text: s(f, 'cv_text'), cv_path, auto_apply: !!f.get('auto_apply'),
+    cv_text: extracted || s(f, 'cv_text') || (existing ? undefined : null), cv_path, auto_apply: !!f.get('auto_apply'),
     consent_at: new Date().toISOString(), truthful_at: new Date().toISOString(),
     apply_alias: existing?.apply_alias ?? makeAlias(full_name),
   };
