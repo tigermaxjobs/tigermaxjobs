@@ -27,7 +27,7 @@ export default async function Office({ searchParams }: { searchParams: Record<st
       {searchParams.sent && <p className="notice">Application sent.</p>}
       {searchParams.error && <p className="notice">{searchParams.error}</p>}
       <h1>Office</h1>
-      <p className="muted">{candidates ?? 0} candidates · {live ?? 0} live jobs</p>
+      <p className="muted">{candidates ?? 0} candidates · {live ?? 0} live jobs · <Link href="/admin/workshops">Workshops & event registrations ›</Link></p>
 
       <h2 id="cv-bank">CV bank ({candidates ?? 0})</h2>
       <form className="search" action="/admin#cv-bank" style={{ marginBottom: 14 }}>

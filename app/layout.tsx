@@ -33,6 +33,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             </Link>
             <nav className="links">
               <Link href="/jobs">Jobs</Link>
+              <Link href="/workshops" className="hide-sm">Workshops</Link>
               <Link href="/#how" className="hide-sm">How it works</Link>
               <Link href="/#employers" className="hide-sm">Employers</Link>
               <Link href="/#pricing" className="hide-sm">Pricing</Link>
@@ -62,6 +63,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               <Link href="/jobs">Browse jobs</Link>
               <Link href="/login?as=candidate">Upload my CV</Link>
               <Link href="/#how">How auto-apply works</Link>
+              <Link href="/workshops">Workshops & events</Link>
               <Link href="/#faq">FAQ</Link>
             </div>
             <div>
@@ -84,6 +86,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         <nav className="tabbar" aria-label="Main">
           <Link href="/"><i>🏠</i>Home</Link>
           <Link href="/jobs"><i>🔎</i>Jobs</Link>
+          <Link href="/workshops"><i>🎟️</i>Events</Link>
           <Link href={dash.href}><i>{dash.icon}</i>{dash.label}</Link>
           {user ? <Link href="/#faq"><i>💬</i>Help</Link> : <Link href="/login"><i>👤</i>Sign in</Link>}
         </nav>

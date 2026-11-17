@@ -9,6 +9,14 @@ export async function POST(req: Request) {
   const reference = form.get('reference');
   if (!reference) return NextResponse.json({ ok: false }, { status: 400 });
   const db = adminClient();
+  // Workshop registrations
+  if (reference.startsWith('TMJ-WS-')) {
+    const { data: r } = await db.from('workshop_registrations').select('id,status,poll_url').eq('reference', reference).single();
+    if (!r || r.status === 'paid' || !r.poll_url) return NextResponse.json({ ok: true });
+    const st = await paynow().pollTransaction(r.poll_url);
+    if (st?.paid?.()) await db.from('workshop_registrations').update({ status: 'paid', paid_at: new Date().toISOString(), paid_via: 'paynow' }).eq('id', r.id);
+    return NextResponse.json({ ok: true });
+  }
   const { data: pay } = await db.from('payments').select('*').eq('reference', reference).single();
   if (!pay || pay.status === 'paid') return NextResponse.json({ ok: true });
   const status = await paynow().pollTransaction(pay.poll_url);

@@ -263,3 +263,25 @@ header.top .in { height: 64px; }
 header.top .brand img { height: 42px; }
 .price .btn { justify-content: center; }
 .price .amt small { font-weight: 500; letter-spacing: 0; }
+
+/* ── Workshops & events ─────────────────────────────── */
+.event { display: grid; grid-template-columns: 76px 1fr auto; gap: 18px; align-items: center; padding: 20px; margin-bottom: 14px;
+  background: var(--card); border: 1px solid var(--line); border-radius: var(--radius); box-shadow: var(--shadow); color: inherit; text-decoration: none; transition: transform .2s var(--ease); }
+.event:hover { transform: translateY(-2px); }
+.event h3 { margin: 0; font-size: 21px; }
+.event .when { background: var(--navy); color: #fff; border-radius: 16px; display: grid; justify-items: center; padding: 10px 0; line-height: 1.1; }
+.event .when b { font-size: 28px; } .event .when span { color: var(--gold); font-weight: 700; text-transform: uppercase; font-size: 13px; } .event .when small { font-size: 11px; opacity: .7; }
+.event .go { color: var(--navy-2); font-weight: 600; font-size: 15px; white-space: nowrap; }
+@media (max-width: 640px) { .event { grid-template-columns: 64px 1fr; } .event .go { grid-column: 2; } }
+.tag.free { background: rgba(52,199,89,.15); color: #1f8a3d; }
+.facts { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: var(--radius); overflow: hidden; }
+.facts div { background: var(--card); padding: 16px 18px; display: grid; gap: 4px; }
+.facts span { font-size: 12px; text-transform: uppercase; letter-spacing: .06em; color: var(--muted); font-weight: 600; }
+.ticks { padding: 0; list-style: none; margin: 0 0 18px; } .ticks li { padding: 6px 0 6px 28px; position: relative; }
+.ticks li::before { content: "✓"; position: absolute; left: 4px; color: var(--gold); font-weight: 800; }
+fieldset.payopts { border: 1px solid var(--line); border-radius: 14px; padding: 12px 14px; display: grid; gap: 10px; margin: 0; }
+fieldset.payopts legend { font-size: 14px; font-weight: 600; padding: 0 6px; }
+.payopts .opt { display: flex; gap: 10px; align-items: flex-start; font-weight: 400; }
+.payopts .opt input { margin-top: 5px; width: auto; flex: none; } .payopts .opt span { display: grid; gap: 2px; } .payopts .opt small { color: var(--muted); font-size: 13px; }
+.invoice img { display: block; }
+@media print { header.top, footer.site, nav.tabbar, .noprint { display: none !important; } main { padding: 0; } .card { box-shadow: none; } }
