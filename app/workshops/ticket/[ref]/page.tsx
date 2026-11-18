@@ -43,7 +43,7 @@ export default async function Ticket({ params, searchParams }: { params: { ref: 
         <div className="row" style={{ justifyContent: 'space-between', alignItems: 'flex-start' }}>
           <div>
             <img src="/logo.png" alt="Tigermax Jobs" height={36} />
-            <p className="muted" style={{ margin: '8px 0 0' }}>4th Floor, 3 Anchor House, 54 Jason Moyo Avenue, Harare<br />+263 77 133 1008 · tigermaxjobs@gmail.com</p>
+            <p className="muted" style={{ margin: '8px 0 0' }}>4th Floor, 3 Anchor House, 54 Jason Moyo Avenue, Harare<br />+263 77 133 1008 · admin@tigermaxjobs.com</p>
           </div>
           <div style={{ textAlign: 'right' }}>
             <h2 style={{ margin: 0 }}>{unpaid ? 'Invoice' : 'Registration'}</h2>
@@ -56,7 +56,7 @@ export default async function Ticket({ params, searchParams }: { params: { ref: 
 
         <div className="grid2" style={{ marginTop: 22 }}>
           <div><span className="muted">Billed to</span><div><b>{r.full_name}</b>{r.organisation ? <><br />{r.organisation}</> : null}<br />{r.email}<br />{r.phone}</div></div>
-          <div><span className="muted">Event</span><div><b>{w?.title}</b><br />{w && dateLabel(w)}{w?.time_label ? `, ${w.time_label}` : ''}<br />{w?.venue}</div></div>
+          <div><span className="muted">{w?.delivery === 'online' ? 'Online course' : 'Event'}</span><div><b>{w?.title}</b><br />{w?.delivery === 'online' ? 'Online, self-paced: start any time' : <>{w && dateLabel(w)}{w?.time_label ? `, ${w.time_label}` : ''}<br />{w?.venue}</>}</div></div>
         </div>
 
         <table style={{ marginTop: 20 }}><thead><tr><th>Item</th><th style={{ textAlign: 'right' }}>Amount</th></tr></thead><tbody>
@@ -75,12 +75,18 @@ export default async function Ticket({ params, searchParams }: { params: { ref: 
             <div className="mini" style={{ marginTop: 0 }}>
               <b>Pay by EcoCash</b>
               <div style={{ marginTop: 6 }}>{bank.map(l => <div key={l} className="ln"><span>{l}</span></div>)}</div>
-              <p className="muted" style={{ margin: '10px 0 0' }}>Send <b>US${Number(r.amount).toFixed(2)}</b>, then WhatsApp your proof of payment with invoice number <b className="mono">{r.invoice_no}</b> to the Tigermax Jobs office on <a href={`${PROOF_WHATSAPP_LINK}?text=${encodeURIComponent(`Proof of payment for ${r.invoice_no} (${r.full_name}, ${w?.title || 'workshop'})`)}`}>{PROOF_WHATSAPP}</a>. Your seat is confirmed once we verify it.</p>
+              <p className="muted" style={{ margin: '10px 0 0' }}>Send <b>US${Number(r.amount).toFixed(2)}</b>, then WhatsApp your proof of payment with invoice number <b className="mono">{r.invoice_no}</b> to the Tigermax Jobs office on <a href={`${PROOF_WHATSAPP_LINK}?text=${encodeURIComponent(`Proof of payment for ${r.invoice_no} (${r.full_name}, ${w?.title || 'workshop'})`)}`}>{PROOF_WHATSAPP}</a>. {w?.delivery === 'online' ? 'Your course opens as soon as we verify it.' : 'Your seat is confirmed once we verify it.'}</p>
             </div>
           </div>
         )}
 
-        {!unpaid && r.status !== 'cancelled' && (
+        {!unpaid && r.status !== 'cancelled' && w?.delivery === 'online' && (
+          <div className="noprint" style={{ marginTop: 18 }}>
+            <p>You are enrolled. Start now and go at your own pace: {(r.completed_modules || []).length} of {(w.modules || []).length} modules done.</p>
+            <Link className="btn gold" href={`/workshops/learn/${r.reference}`}>{(r.completed_modules || []).length ? 'Continue the course' : 'Start the course'} ›</Link>
+          </div>
+        )}
+        {!unpaid && r.status !== 'cancelled' && w?.delivery !== 'online' && (
           <p style={{ marginTop: 18 }}>Your seat is confirmed. Bring this page (printed or on your phone) to the venue.{r.paid_at ? ` Paid ${new Date(r.paid_at).toLocaleDateString('en-GB')}${r.paid_via ? ` via ${r.paid_via}` : ''}.` : ''}</p>
         )}
 

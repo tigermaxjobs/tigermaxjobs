@@ -1,7 +1,8 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { userClient } from '@/lib/supabase';
-import { dateLabel, priceLabel, isPast, type Workshop, type Field } from '@/lib/workshops';
+import { dateLabel, priceLabel, isPast, isOnline, totalMinutes, type Workshop, type Field } from '@/lib/workshops';
+import { currentUser } from '@/lib/supabase';
 import { registerWorkshop } from '../actions';
 
 export const dynamic = 'force-dynamic';
@@ -21,6 +22,8 @@ export default async function EventPage({ params, searchParams }: { params: { sl
   const price = Number(w.price_usd) || 0;
   const hasMember = w.member_price_usd !== null && w.member_price_usd !== undefined;
   const closed = isPast(w) || left === 0;
+  const on = isOnline(w), mins = totalMinutes(w);
+  const { user } = await currentUser();
 
   return (
     <>
@@ -29,8 +32,13 @@ export default async function EventPage({ params, searchParams }: { params: { sl
       {w.tagline && <p className="lead">{w.tagline}</p>}
 
       <div className="facts">
-        <div><span>Date</span><b>{dateLabel(w)}{w.time_label ? `, ${w.time_label}` : ''}</b></div>
-        <div><span>Venue</span><b>{w.venue}</b></div>
+        {on ? <>
+          <div><span>When</span><b>Start any time, straight after registering</b></div>
+          <div><span>Format</span><b>Online · self-paced · {(w.modules || []).length} modules{mins ? ` (about ${Math.round(mins / 6) / 10} h)` : ''}</b></div>
+        </> : <>
+          <div><span>Date</span><b>{dateLabel(w)}{w.time_label ? `, ${w.time_label}` : ''}</b></div>
+          <div><span>Venue</span><b>{w.venue}</b></div>
+        </>}
         <div><span>Entry</span><b>{price ? `RSVP ${priceLabel(price)}` : 'FREE'}{hasMember ? ` · ${priceLabel(w.member_price_usd)} for registered candidates` : ''}</b></div>
         {left !== null && <div><span>Seats left</span><b>{left}</b></div>}
       </div>
@@ -43,6 +51,10 @@ export default async function EventPage({ params, searchParams }: { params: { sl
             <h3>What we will cover</h3>
             <ul className="ticks">{w.focus.map(x => <li key={x}>{x}</li>)}</ul>
           </>}
+          {on && !!w.modules?.length && <>
+            <h3>Modules</h3>
+            <ol className="muted" style={{ fontSize: 16, paddingLeft: 20 }}>{w.modules.map(m => <li key={m.id}>{m.title}{m.minutes ? ` · ${m.minutes} min` : ''}</li>)}</ol>
+          </>}
           {w.audience && <><h3>Who should attend</h3><p className="muted" style={{ fontSize: 16 }}>{w.audience}</p></>}
           {w.price_note && <p className="notice">{w.price_note}</p>}
         </div>
@@ -50,12 +62,14 @@ export default async function EventPage({ params, searchParams }: { params: { sl
         <div className="card" id="register">
           <h2 style={{ marginTop: 0 }}>Register</h2>
           {searchParams.error && <p className="notice">{searchParams.error}</p>}
+          {on && !user && <p className="notice"><b>Recommended:</b> <Link href={`/login?as=candidate&next=/workshops/${w.slug}`}>sign in or create a free account</Link> first, so your progress is saved to your dashboard. Without an account you study through the private link we give you after registering.</p>}
+          {on && user && <p className="muted">Signed in as {user.email}. Your progress will be saved to your account.</p>}
           {closed ? <p className="muted">{isPast(w) ? 'This event has taken place.' : 'This event is fully booked.'}</p> : (
             <form action={registerWorkshop} className="stack">
               <input type="hidden" name="slug" value={w.slug} />
               <input type="text" name="website" tabIndex={-1} autoComplete="off" aria-hidden style={{ position: 'absolute', left: -9999, width: 1, height: 1 }} />
               <label>Full name<input name="full_name" required autoComplete="name" /></label>
-              <label>Email<input name="email" type="email" required autoComplete="email" />
+              <label>Email<input name="email" type="email" required autoComplete="email" defaultValue={user?.email || ''} />
                 {hasMember && <span className="muted">Registered Tigermax candidates: use the email on your profile to get the {priceLabel(w.member_price_usd)} price.</span>}</label>
               <label>Phone / WhatsApp<input name="phone" type="tel" required autoComplete="tel" placeholder="+263 7…" /></label>
               <label>Organisation or school (optional)<input name="organisation" autoComplete="organization" /></label>
@@ -71,8 +85,8 @@ export default async function EventPage({ params, searchParams }: { params: { sl
                   {hasMember && <p className="muted" style={{ margin: 0 }}>If your email matches a registered candidate, there is nothing to pay.</p>}
                 </fieldset>
               )}
-              <button className="gold">{price > 0 ? `Register · ${priceLabel(price)}` : 'Register, free'}</button>
-              <span className="muted">No account needed. We use your details only for this event. See our <Link href="/privacy">privacy notice</Link>.</span>
+              <button className="gold">{price > 0 ? `Register · ${priceLabel(price)}` : on ? 'Register and start, free' : 'Register, free'}</button>
+              <span className="muted">{on ? 'You start the course as soon as you are registered (paid courses: once payment is confirmed).' : 'No account needed.'} We use your details only for this {on ? 'course' : 'event'}. See our <Link href="/privacy">privacy notice</Link>.</span>
             </form>
           )}
         </div>

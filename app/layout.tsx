@@ -11,10 +11,10 @@ export const viewport = { width: 'device-width', initialScale: 1, viewportFit: '
 
 export default async function RootLayout({ children }: { children: React.ReactNode }) {
   const { user, role } = await currentUser();
-  const dash = role === 'candidate' ? { href: '/candidate', label: 'My CV', icon: '📄' }
-    : role === 'employer' ? { href: '/employer', label: 'Dashboard', icon: '📊' }
-    : role === 'staff' ? { href: '/admin', label: 'Office', icon: '🗂️' }
-    : { href: '/login?as=candidate', label: 'Upload CV', icon: '📄' };
+  const dash = role === 'candidate' ? { href: '/candidate', label: 'My CV' }
+    : role === 'employer' ? { href: '/employer', label: 'Dashboard' }
+    : role === 'staff' ? { href: '/admin', label: 'Office' }
+    : { href: '/login?as=candidate', label: 'Upload CV' };
   return (
     <html lang="en">
       <head>
@@ -33,6 +33,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             </Link>
             <nav className="links">
               <Link href="/jobs">Jobs</Link>
+              <Link href="/assessments" className="hide-sm">Career IQ</Link>
               <Link href="/workshops" className="hide-sm">Workshops</Link>
               <Link href="/#how" className="hide-sm">How it works</Link>
               <Link href="/#employers" className="hide-sm">Employers</Link>
@@ -63,12 +64,14 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               <Link href="/jobs">Browse jobs</Link>
               <Link href="/login?as=candidate">Upload my CV</Link>
               <Link href="/#how">How auto-apply works</Link>
+              <Link href="/assessments">Career Intelligence tests</Link>
               <Link href="/workshops">Workshops & events</Link>
               <Link href="/#faq">FAQ</Link>
             </div>
             <div>
               <h4>Employers</h4>
               <Link href="/login?as=employer">Post a job</Link>
+              <Link href="/assessments#employers">Assess your candidates</Link>
               <Link href="/#employers">Recruitment services</Link>
               <Link href="/#pricing">Pricing</Link>
             </div>
@@ -76,7 +79,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
               <h4>Contact</h4>
               <a href="https://wa.me/263771331008">WhatsApp +263 77 133 1008</a>
               <a href="tel:+263771331008">Call the office</a>
-              <a href="mailto:tigermaxjobs@gmail.com">tigermaxjobs@gmail.com</a>
+              <a href="mailto:admin@tigermaxjobs.com">admin@tigermaxjobs.com</a>
               <Link href="/privacy">Privacy</Link>
             </div>
             <div className="legal">© {new Date().getFullYear()} Tigermax Jobs, Harare, Zimbabwe. Official recruitment agency for National Youth Service placements.</div>
@@ -84,11 +87,12 @@ export default async function RootLayout({ children }: { children: React.ReactNo
         </footer>
 
         <nav className="tabbar" aria-label="Main">
-          <Link href="/"><i>🏠</i>Home</Link>
-          <Link href="/jobs"><i>🔎</i>Jobs</Link>
-          <Link href="/workshops"><i>🎟️</i>Events</Link>
-          <Link href={dash.href}><i>{dash.icon}</i>{dash.label}</Link>
-          {user ? <Link href="/#faq"><i>💬</i>Help</Link> : <Link href="/login"><i>👤</i>Sign in</Link>}
+          <Link href="/">Home</Link>
+          <Link href="/jobs">Jobs</Link>
+          <Link href="/assessments">Career IQ</Link>
+          <Link href="/workshops">Learn</Link>
+          <Link href={dash.href}>{dash.label}</Link>
+          {user ? <Link href="/#faq">Help</Link> : <Link href="/login">Sign in</Link>}
         </nav>
       </body>
     </html>

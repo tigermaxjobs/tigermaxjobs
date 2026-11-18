@@ -32,7 +32,7 @@ export default async function OfficeWorkshops({ searchParams }: { searchParams: 
 
       {sel && <>
         <div className="row" style={{ justifyContent: 'space-between' }}>
-          <div><h2 style={{ margin: 0 }}>{sel.title}</h2><p className="muted" style={{ margin: '4px 0 0' }}>{dateLabel(sel)} · {sel.venue} · {Number(sel.price_usd) ? `RSVP ${priceLabel(sel.price_usd)}` : 'FREE'}</p></div>
+          <div><h2 style={{ margin: 0 }}>{sel.title}</h2><p className="muted" style={{ margin: '4px 0 0' }}>{sel.delivery === 'online' ? 'Online, start any time' : dateLabel(sel)} · {sel.venue} · {Number(sel.price_usd) ? `RSVP ${priceLabel(sel.price_usd)}` : 'FREE'}</p></div>
           <div className="row"><Link className="btn ghost sm" href={`/workshops/${sel.slug}`}>Public page</Link><Link className="btn ghost sm" href={`/admin/workshops?e=${sel.slug}&edit=${sel.slug}#edit`}>Edit event</Link></div>
         </div>
         <div className="stats" style={{ margin: '16px 0' }}>
@@ -40,13 +40,14 @@ export default async function OfficeWorkshops({ searchParams }: { searchParams: 
           <div><b>US${paid.toFixed(0)}</b><span>paid</span></div>
           <div><b>US${due.toFixed(0)}</b><span>awaiting payment</span></div>
         </div>
-        <div className="card" style={{ overflowX: 'auto' }}><table><thead><tr><th>Name</th><th>Contact</th><th>Answers</th><th>Payment</th><th></th></tr></thead><tbody>
+        <div className="card" style={{ overflowX: 'auto' }}><table><thead><tr><th>Name</th><th>Contact</th><th>Answers</th><th>Payment</th>{sel.delivery === 'online' && <th>Progress</th>}<th></th></tr></thead><tbody>
           {list.map((r: any) => <tr key={r.id} style={r.status === 'cancelled' ? { opacity: .5 } : undefined}>
             <td><b>{r.full_name}</b>{r.organisation && <div className="muted">{r.organisation}</div>}<div className="muted mono">{r.invoice_no}</div></td>
             <td>{r.phone}<div className="muted">{r.email}</div></td>
             <td className="muted">{Object.entries(r.answers || {}).map(([k, v]) => <div key={k}><b>{k}:</b> {String(v)}</div>)}</td>
             <td>{Number(r.amount) ? `US$${Number(r.amount).toFixed(2)}` : 'Free'}{r.is_member ? ' (member)' : ''}<div className="muted">{STATUS_LABEL[r.status]}{r.pay_option === 'invoice' ? ' · invoice' : r.pay_option === 'paynow' ? ' · Paynow' : ''}</div>
               <a className="muted" href={`/workshops/ticket/${r.reference}`}>View {r.status === 'awaiting_payment' ? 'invoice' : 'ticket'}</a></td>
+            {sel.delivery === 'online' && <td>{(r.completed_modules || []).length}/{(sel.modules || []).length}{r.completed_at ? <div className="tag gold">Completed</div> : null}{r.user_id ? <div className="muted">account</div> : null}</td>}
             <td className="stack" style={{ display: 'grid', gap: 6 }}>
               {r.status === 'awaiting_payment' && <form action={markRegistration} className="row"><input type="hidden" name="id" value={r.id} /><input type="hidden" name="action" value="paid" />
                 <select name="via" style={{ width: 'auto', padding: '6px 8px' }}><option value="bank">Bank</option><option value="cash">Cash</option><option value="paynow">Paynow</option></select><button className="sm">Mark paid</button></form>}
@@ -73,7 +74,12 @@ export default async function OfficeWorkshops({ searchParams }: { searchParams: 
           <label>End date (multi-day)<input type="date" name="ends_on" defaultValue={edit?.ends_on || ''} /></label>
           <label>Time<input name="time_label" defaultValue={edit?.time_label || ''} placeholder="08:30 – 13:00" /></label>
         </div>
-        <label>Venue<input name="venue" required defaultValue={edit?.venue} /></label>
+        <div className="grid2">
+          <label>Format<select name="delivery" defaultValue={edit?.delivery || 'in_person'}>
+            <option value="in_person">In person, on a date</option><option value="online">Online, start any time (self-paced)</option></select>
+            <span className="muted">Online: the date is only the day it opens; registrants start straight away.</span></label>
+          <label>Venue<input name="venue" required defaultValue={edit?.venue} placeholder="Online · self-paced" /></label>
+        </div>
         <label>What will be covered (one per line)<textarea name="focus" defaultValue={(edit?.focus || []).join('\n')} /></label>
         <label>Who should attend<input name="audience" defaultValue={edit?.audience || ''} /></label>
         <div className="grid3">
@@ -85,6 +91,9 @@ export default async function OfficeWorkshops({ searchParams }: { searchParams: 
         <label>Registration questions for this event (JSON)
           <textarea name="form_fields" className="mono" style={{ minHeight: 160 }} defaultValue={JSON.stringify(edit?.form_fields || [{ name: 'field', label: 'Your field of work', type: 'text', required: true }], null, 2)} />
           <span className="muted">Each question: {'{"name":"key","label":"Question","type":"text|textarea|select","required":true,"options":["A","B"]}'}. Name, email, phone and organisation are always asked.</span></label>
+        <label>Online modules (JSON, online format only)
+          <textarea name="modules" className="mono" style={{ minHeight: 160 }} defaultValue={JSON.stringify(edit?.modules || [], null, 2)} />
+          <span className="muted">Each module: {'{"id":"m1","title":"Module title","minutes":20,"body":"Text. Blank line = new paragraph.","check":"What the learner confirms"}'}</span></label>
         <label className="row" style={{ display: 'flex' }}><input type="checkbox" name="published" defaultChecked={edit ? edit.published : true} /> Published on the website</label>
         <button className="gold">{edit ? 'Save changes' : 'Add event'}</button>
       </form>

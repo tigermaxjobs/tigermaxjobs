@@ -3,6 +3,7 @@ import Link from 'next/link';
 import { currentUser } from '@/lib/supabase';
 import { saveCandidate, startCandidatePayment, setHireStatus, saveNotes } from '@/app/actions';
 import { CANDIDATE_FEES } from '@/lib/plans';
+import CareerSection from './career';
 
 export const dynamic = 'force-dynamic';
 
@@ -106,6 +107,8 @@ export default async function Candidate({ searchParams }: { searchParams: Record
           <button className="gold">Save my answers</button>
         </form>
       </>}
+
+      <CareerSection userId={user.id} email={user.email || ''} />
 
       <h2 id="offshore">Offshore &amp; online placement</h2>
       {searchParams.paid && <p className="notice">Thank you. Your registration is confirmed as soon as Paynow confirms the payment. Our team will contact you.</p>}

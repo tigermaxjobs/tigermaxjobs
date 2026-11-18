@@ -17,10 +17,10 @@ export async function signUp(f: FormData) {
   const role = s(f, 'role') === 'employer' ? 'employer' : 'candidate';
   const { error } = await sb.auth.signUp({
     email: s(f, 'email'), password: s(f, 'password'),
-    options: { data: { role, full_name: s(f, 'full_name') }, emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/login` },
+    options: { data: { role, full_name: s(f, 'full_name') }, emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/login${s(f, 'next').startsWith('/') ? `?next=${encodeURIComponent(s(f, 'next'))}` : ''}` },
   });
   if (error) redirect('/login?error=' + encodeURIComponent(error.message));
-  redirect('/login?check=1');
+  redirect(`/login?check=1&as=${role}${s(f, 'next').startsWith('/') ? `&next=${encodeURIComponent(s(f, 'next'))}` : ''}#create`);
 }
 
 export async function signIn(f: FormData) {
@@ -28,6 +28,8 @@ export async function signIn(f: FormData) {
   const { error } = await sb.auth.signInWithPassword({ email: s(f, 'email'), password: s(f, 'password') });
   if (error) redirect('/login?error=' + encodeURIComponent(error.message));
   const { role } = await currentUser();
+  const next = s(f, 'next');
+  if (next.startsWith('/') && !next.startsWith('//')) redirect(next); // back to the page that asked for sign-in
   redirect(role === 'employer' ? '/employer' : role === 'staff' ? '/admin' : '/candidate');
 }
 

@@ -5,7 +5,13 @@ export type Workshop = {
   starts_on: string; ends_on: string | null; time_label: string | null; venue: string; focus: string[] | null;
   audience: string | null; price_usd: number; member_price_usd: number | null; price_note: string | null;
   capacity: number | null; form_fields: Field[]; published: boolean;
+  delivery: 'in_person' | 'online'; modules: Module[];
 };
+// Online, self-paced workshops: open all the time; attendees start straight after registration (once paid).
+export type Module = { id: string; title: string; minutes?: number; body: string; check?: string };
+export const isOnline = (w: Pick<Workshop, 'delivery'>) => w.delivery === 'online';
+export const totalMinutes = (w: Pick<Workshop, 'modules'>) => (w.modules || []).reduce((n, m) => n + (Number(m.minutes) || 0), 0);
+export const canLearn = (status: string) => status === 'confirmed' || status === 'paid';
 
 // Manual payment details printed on invoices (default: EcoCash below). BANK_DETAILS in the hosting environment overrides them, one line per row, e.g.
 // "Bank: CBZ Bank\nAccount name: Tigermax Jobs\nAccount number: 0123456789\nBranch: Kwame Nkrumah\nCurrency: USD"
@@ -33,8 +39,8 @@ export function dateLabel(w: Pick<Workshop, 'starts_on' | 'ends_on'>) {
 
 export const priceLabel = (n: number | null | undefined) => (!n ? 'FREE' : `US$${Number(n).toFixed(Number(n) % 1 ? 2 : 0)}`);
 
-export const isPast = (w: Pick<Workshop, 'starts_on' | 'ends_on'>) =>
-  (w.ends_on || w.starts_on) < new Date(Date.now() + 2 * 3600e3).toISOString().slice(0, 10);
+export const isPast = (w: Pick<Workshop, 'starts_on' | 'ends_on'> & { delivery?: string }) =>
+  w.delivery !== 'online' && (w.ends_on || w.starts_on) < new Date(Date.now() + 2 * 3600e3).toISOString().slice(0, 10);
 
 // Unguessable reference: doubles as the attendee's private link to their ticket / invoice.
 export function newReference() {

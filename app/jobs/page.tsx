@@ -28,7 +28,6 @@ export default async function Jobs({ searchParams }: { searchParams: { mode?: st
       <p className="lead">Jobs in Zimbabwe, online and abroad. Or skip the searching: upload your CV once and we apply for you when you match.</p>
 
       <form className="search" action="/jobs">
-        <span aria-hidden>🔎</span>
         <input name="q" placeholder="Job title, field or employer" defaultValue={term} aria-label="Search jobs" />
         {searchParams.mode && <input type="hidden" name="mode" value={searchParams.mode} />}
         <button>Search</button>

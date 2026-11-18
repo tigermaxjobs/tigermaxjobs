@@ -13,10 +13,10 @@ const STEPS = [
 ];
 
 const SERVICES = [
-  { i: '🎯', t: 'Skills role matching', d: 'Full recruitment. We source, match and shortlist people whose skills fit the role, not just the job title.' },
-  { i: '🤝', t: 'On-demand employee leasing', d: 'Staff when you need them, for a project, a season or a peak, without the hiring overhead.' },
-  { i: '🗂️', t: 'Managed recruitment', d: 'We run the shortlisting and interviews for you and hand over the best candidates.' },
-  { i: '🧭', t: 'HR support', d: 'Practical HR help for growing businesses, with packages you can customise.' },
+  { t: 'Skills role matching', d: 'Full recruitment. We source, match and shortlist people whose skills fit the role, not just the job title.' },
+  { t: 'On-demand employee leasing', d: 'Staff when you need them, for a project, a season or a peak, without the hiring overhead.' },
+  { t: 'Managed recruitment', d: 'We run the shortlisting and interviews for you and hand over the best candidates.' },
+  { t: 'HR support', d: 'Practical HR help for growing businesses, with packages you can customise.' },
 ];
 
 const FAQ = [
@@ -28,7 +28,7 @@ const FAQ = [
   { q: 'Can I find jobs outside Zimbabwe?', a: 'Yes. Tell us whether you want jobs in Zimbabwe, online and remote work, or jobs abroad, and we match you to all three.' },
   { q: 'Who can see my CV?', a: 'Your CV is stored privately. We share it only with employers you are applying to. You can ask us to delete your data at any time.' },
   { q: 'How do employers pay?', a: 'Through Paynow: EcoCash or Visa/Mastercard. You can also arrange payment with the office and we add your listings for you.' },
-  { q: 'Is Tigermax a registered agency?', a: 'Yes. Tigermax Jobs is a youth-owned HR support and recruitment agency licensed by the Ministry of Public Service, Labour and Social Welfare (MPSLSW), based at Anchor House in Harare.' },
+  { q: 'Is Tigermax a registered agency?', a: 'Yes. Tigermax Jobs is a youth-owned HR support and recruitment agency licensed by the Ministry of Public Service, Labour and Social Welfare (MPSLSW), based at 4th Floor, 3 Anchor House, 54 Jason Moyo Avenue, Harare, Zimbabwe.' },
 ];
 
 export default async function Home() {
@@ -53,7 +53,7 @@ export default async function Home() {
         </div>
         <p className="muted" style={{ marginTop: 14 }}>Free to join. Verified offshore placements from US$240.</p>
         <div className="channels">
-          <span className="chip">🌐 Web</span><span className="chip">💬 WhatsApp</span><span className="chip">✉️ Email</span><span className="chip">🏢 Walk-in office</span>
+          <span className="chip">Web</span><span className="chip">WhatsApp</span><span className="chip">Email</span><span className="chip">Walk-in office</span>
         </div>
 
         <div className="window reveal" aria-label="Example of the candidate dashboard">
@@ -146,9 +146,9 @@ export default async function Home() {
             <h2 className="h-lg">Local. Online. Abroad.</h2>
           </div>
           <div className="grid3" style={{ marginTop: 36 }}>
-            <Link className="feature reveal" href="/jobs?mode=onsite"><div className="ico">🇿🇼</div><h3>Zimbabwe</h3><p>Jobs with employers in Harare and across the country.</p><p className="link-arrow" style={{ marginTop: 14 }}>Browse</p></Link>
-            <Link className="feature reveal" href="/jobs?mode=remote"><div className="ico">💻</div><h3>Online &amp; remote</h3><p>Work from home for companies anywhere. Verified placements available.</p><p className="link-arrow" style={{ marginTop: 14 }}>Browse</p></Link>
-            <Link className="feature reveal" href="/jobs?mode=offshore"><div className="ico">✈️</div><h3>Abroad</h3><p>Verified offshore jobs, with our support all the way until you travel and start work.</p><p className="link-arrow" style={{ marginTop: 14 }}>Browse</p></Link>
+            <Link className="feature reveal" href="/jobs?mode=onsite"><h3>Zimbabwe</h3><p>Jobs with employers in Harare and across the country.</p><p className="link-arrow" style={{ marginTop: 14 }}>Browse</p></Link>
+            <Link className="feature reveal" href="/jobs?mode=remote"><h3>Online &amp; remote</h3><p>Work from home for companies anywhere. Verified placements available.</p><p className="link-arrow" style={{ marginTop: 14 }}>Browse</p></Link>
+            <Link className="feature reveal" href="/jobs?mode=offshore"><h3>Abroad</h3><p>Verified offshore jobs, with our support all the way until you travel and start work.</p><p className="link-arrow" style={{ marginTop: 14 }}>Browse</p></Link>
           </div>
         </div>
       </section>
@@ -162,11 +162,11 @@ export default async function Home() {
             <p className="lead">We look into jobs outside Zimbabwe, verify that they are legitimate, facilitate review by the Office of the President and Cabinet (OPC), and handle the logistics until you travel and start working.</p>
           </div>
           <div className="grid4" style={{ marginTop: 36 }}>
-            {[['📝', 'Register', 'Pay the non-refundable US$240 registration and complete your profile with our team.'],
-              ['🔍', 'We find & verify', 'We look into jobs outside Zimbabwe and verify that each opportunity is legitimate.'],
-              ['🏛️', 'OPC review', 'We facilitate the review of your placement by the Office of the President and Cabinet (OPC), Zimbabwe.'],
-              ['✈️', 'Logistics & travel', 'We handle the other logistics and support you until you travel and start working.']].map(([i, t, d]) => (
-              <div className="feature reveal" key={t}><div className="ico">{i}</div><h3>{t}</h3><p>{d}</p></div>
+            {[['', 'Register', 'Pay the non-refundable US$240 registration and complete your profile with our team.'],
+              ['', 'We find & verify', 'We look into jobs outside Zimbabwe and verify that each opportunity is legitimate.'],
+              ['', 'OPC review', 'We facilitate the review of your placement by the Office of the President and Cabinet (OPC), Zimbabwe.'],
+              ['', 'Logistics & travel', 'We handle the other logistics and support you until you travel and start working.']].map(([i, t, d]) => (
+              <div className="feature reveal" key={t}><h3>{t}</h3><p>{d}</p></div>
             ))}
           </div>
           <div className="card center reveal" style={{ marginTop: 28, padding: 32 }}>
@@ -207,7 +207,7 @@ export default async function Home() {
           <h2 className="h-lg">The right people, matched to the role.</h2>
           <p className="lead">Job creation is as sustainable as the job placement. Proper skills role matching means productive hires, growing companies and room for more jobs.</p>
           <div className="grid4" style={{ marginTop: 32 }}>
-            {SERVICES.map(s => <div className="feature reveal" key={s.t}><div className="ico">{s.i}</div><h3>{s.t}</h3><p>{s.d}</p></div>)}
+            {SERVICES.map(s => <div className="feature reveal" key={s.t}><h3>{s.t}</h3><p>{s.d}</p></div>)}
           </div>
           <div className="grid4" style={{ marginTop: 40 }}>
             {['Create your company account', 'Get verified by our office', 'Pay securely with Paynow', 'Shortlist, interview and hire'].map((t, i) => (
@@ -262,9 +262,9 @@ export default async function Home() {
       {/* ── Privacy promise ───────────────── */}
       <section className="section alt bleed">
         <div className="in grid3">
-          <div className="reveal"><div style={{ fontSize: 30 }}>🔒</div><h3>Your CV stays private</h3><p className="muted">Stored securely and shared only with employers you apply to.</p></div>
-          <div className="reveal"><div style={{ fontSize: 30 }}>📬</div><h3>Replies come to you</h3><p className="muted">Employer replies are forwarded to your own email. We never keep the message.</p></div>
-          <div className="reveal"><div style={{ fontSize: 30 }}>✋</div><h3>You stay in control</h3><p className="muted">Switch auto-apply on or off, or ask us to delete your data, any time.</p></div>
+          <div className="reveal"><h3>Your CV stays private</h3><p className="muted">Stored securely and shared only with employers you apply to.</p></div>
+          <div className="reveal"><h3>Replies come to you</h3><p className="muted">Employer replies are forwarded to your own email. We never keep the message.</p></div>
+          <div className="reveal"><h3>You stay in control</h3><p className="muted">Switch auto-apply on or off, or ask us to delete your data, any time.</p></div>
         </div>
       </section>
 

@@ -1,6 +1,8 @@
 import { NextResponse } from 'next/server';
 import { adminClient } from '@/lib/supabase';
 import { scoreAndDraft, roughFit } from '@/lib/ai';
+import { loadProfile } from '@/lib/assessments/server';
+import { pathways, matchSummary } from '@/lib/assessments/career';
 import { sendPrepared } from '@/lib/apply';
 
 export const maxDuration = 300;
@@ -24,6 +26,15 @@ export async function GET(req: Request) {
   const { data: existing } = await db.from('applications').select('job_id, candidate_id');
   const done = new Set((existing || []).map(a => a.job_id + ':' + a.candidate_id));
   const minAuto = Number(process.env.AUTO_APPLY_MIN_SCORE || 65);
+
+  // Career Intelligence results (band level) for candidates who agreed to their use in matching. Supporting
+  // information only: the matching prompt is told never to lower a CV-based score because of them.
+  const { data: share } = await db.from('assessment_consents').select('user_id').eq('share_with_employers', true);
+  const sharing = new Set((share || []).map(x => x.user_id));
+  for (const c of cands || []) if (c.user_id && sharing.has(c.user_id)) {
+    const { profile } = await loadProfile(c.user_id);
+    if (Object.keys(profile.scores).length) (c as any).assessment_summary = matchSummary(profile.scores, pathways(profile));
+  }
 
   let calls = 0, matches = 0, sent = 0;
   for (const job of jobs || []) for (const c of cands || []) {

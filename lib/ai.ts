@@ -13,7 +13,9 @@ Compare one candidate with one job and reply with JSON only:
             "salutation": "Dear Sir/Madam,", "paragraphs": [4-5 short British-English paragraphs]}}
 Rules: list only requirements the candidate does not fully meet. Include logistics gaps: relocation/shifts/licences for on-site;
 laptop, internet, power backup, time zone and receiving foreign pay for remote; passport, visa/work permit, police clearance and travel costs for offshore.
-The letter uses only facts from the candidate profile, never invents experience and never mentions a recruitment agency.`;
+The letter uses only facts from the candidate profile, never invents experience and never mentions a recruitment agency.
+If an assessment_summary is given (Tigermax psychometric results, band level), you may use it only to explain fit in "why" or to raise
+the score where it shows relevant strengths. Never lower the score or reject because of it, and never mention test results in the letter.`;
 
 export async function scoreAndDraft(candidate: any, job: any): Promise<Match | null> {
   const res = await fetch('https://api.anthropic.com/v1/messages', {
@@ -28,6 +30,7 @@ export async function scoreAndDraft(candidate: any, job: any): Promise<Match | n
         categories: candidate.categories, modes: candidate.modes, passport: candidate.has_passport,
         profile: candidate.profile, cv_text: (candidate.cv_text || '').slice(0, 12000),
         candidate_notes: candidate.candidate_notes || undefined, answers_to_cv_questions: candidate.gap_answers || undefined,
+        assessment_summary: candidate.assessment_summary || undefined,
       })}` }],
     }),
   });
