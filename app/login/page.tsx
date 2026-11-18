@@ -1,4 +1,4 @@
-import { signIn, signUp, resendConfirmation } from '@/app/actions';
+import { signIn, signUp, resendConfirmation, confirmCode } from '@/app/actions';
 import SubmitButton from '@/lib/submit-button';
 
 export default function Login({ searchParams }: { searchParams: { as?: string; error?: string; check?: string; next?: string; resent?: string } }) {
@@ -28,7 +28,7 @@ export default function Login({ searchParams }: { searchParams: { as?: string; e
           <label>Email<input name="email" type="email" autoComplete="email" required /></label>
           <label>Password<input name="password" type="password" minLength={8} autoComplete="new-password" required /></label>
           <SubmitButton className="gold" label="Create account" pending="Creating your account…" />
-          {searchParams.check && <p className="notice" role="status" style={{ margin: 0 }}>Check your email to confirm your account, then sign in.</p>}
+          {searchParams.check && <p className="notice" role="status" style={{ margin: 0 }}>Check your email to confirm your account, then sign in. Use the newest email if you got more than one.</p>}
           <p className="muted" style={{ margin: 0 }}>By joining you agree to our <a href="/privacy">privacy notice</a>.</p>
         </form>
         <form action={signIn} className="card stack">
@@ -44,6 +44,15 @@ export default function Login({ searchParams }: { searchParams: { as?: string; e
           <p className="muted" style={{ margin: 0 }}>Need help? WhatsApp the office on <a href="https://wa.me/263771331008">+263 77 133 1008</a>.</p>
         </form>
       </div>
+      <form action={confirmCode} className="card stack" id="code" style={{ maxWidth: 520, margin: '16px auto 0' }}>
+        <b>Have a 6-digit code from our email?</b>
+        {next && <input type="hidden" name="next" value={next} />}
+        <div className="grid2">
+          <label>Email<input name="email" type="email" required autoComplete="email" /></label>
+          <label>Code<input name="code" inputMode="numeric" pattern="[0-9 ]{6,8}" required autoComplete="one-time-code" placeholder="123456" /></label>
+        </div>
+        <SubmitButton className="gold" label="Confirm my account" pending="Confirming…" />
+      </form>
       <form action={resendConfirmation} className="card stack" style={{ maxWidth: 520, margin: '16px auto 0' }}>
         <b>Resend my confirmation link</b>
         <label>Email you signed up with<input name="email" type="email" required autoComplete="email" /></label>

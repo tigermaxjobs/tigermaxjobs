@@ -42,6 +42,7 @@ export default async function Candidate({ searchParams }: { searchParams: Record
   const answers: Record<string, string> = c?.gap_answers ?? {};
   return (
     <>
+      {searchParams.welcome && <p className="notice">Your account is confirmed. Welcome to Tigermax Jobs. Start with your CV profile below.</p>}
       {searchParams.error && <p className="notice">{searchParams.error}</p>}
       {searchParams.saved && <p className="notice">Saved. We will match you to new jobs every day.</p>}
       {searchParams.applied && <p className="notice">Application recorded. You can follow it below.</p>}

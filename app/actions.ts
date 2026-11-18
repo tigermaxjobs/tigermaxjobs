@@ -34,10 +34,33 @@ export async function signIn(f: FormData) {
   redirect(role === 'employer' ? '/employer' : role === 'staff' ? '/admin' : '/candidate');
 }
 
+const landing = async (next: string) => {
+  if (next.startsWith('/') && !next.startsWith('//')) redirect(next);
+  const { role } = await currentUser();
+  redirect(role === 'employer' ? '/employer' : role === 'staff' ? '/admin' : '/candidate?welcome=1');
+};
+
+// Confirmation from the email button (token hash) – runs only when the person taps "Confirm my account".
+export async function confirmEmail(f: FormData) {
+  const type = (['signup', 'email', 'invite', 'magiclink', 'recovery', 'email_change'].includes(s(f, 'type')) ? s(f, 'type') : 'signup') as any;
+  const { error } = await userClient().auth.verifyOtp({ token_hash: s(f, 'token_hash'), type });
+  if (error) redirect('/login?error=' + encodeURIComponent('That link has expired or was already used. If you can sign in, you are confirmed. Otherwise request a new link below and use the newest email.') + '#resend');
+  await landing(s(f, 'next'));
+}
+
+// Confirmation by typing the 6-digit code from the email.
+export async function confirmCode(f: FormData) {
+  const email = s(f, 'email'), token = s(f, 'code').replace(/\D/g, '');
+  let { error } = await userClient().auth.verifyOtp({ email, token, type: 'signup' });
+  if (error) ({ error } = await userClient().auth.verifyOtp({ email, token, type: 'email' }));
+  if (error) redirect('/login?error=' + encodeURIComponent('That code is wrong or has expired. Use the code from the newest email, or request a new one below.') + '#code');
+  await landing(s(f, 'next'));
+}
+
 // Sends the confirmation link again (for people whose first email did not arrive).
 export async function resendConfirmation(f: FormData) {
   const email = s(f, 'email');
-  const { error } = await userClient().auth.resend({ type: 'signup', email, options: { emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/login` } });
+  const { error } = await userClient().auth.resend({ type: 'signup', email, options: { emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/candidate` } });
   if (error) redirect('/login?error=' + encodeURIComponent(/rate limit|security purposes/i.test(error.message) ? 'Please wait a minute before asking for another link.' : error.message) + '#resend');
   redirect('/login?resent=1#resend');
 }
