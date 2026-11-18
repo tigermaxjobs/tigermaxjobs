@@ -1,7 +1,7 @@
-import { signIn, signUp } from '@/app/actions';
+import { signIn, signUp, resendConfirmation } from '@/app/actions';
 import SubmitButton from '@/lib/submit-button';
 
-export default function Login({ searchParams }: { searchParams: { as?: string; error?: string; check?: string; next?: string } }) {
+export default function Login({ searchParams }: { searchParams: { as?: string; error?: string; check?: string; next?: string; resent?: string } }) {
   const role = searchParams.as === 'employer' ? 'employer' : 'candidate';
   const next = searchParams.next && searchParams.next.startsWith('/') && !searchParams.next.startsWith('//') ? searchParams.next : '';
   return (
@@ -37,9 +37,19 @@ export default function Login({ searchParams }: { searchParams: { as?: string; e
           <label>Email<input name="email" type="email" autoComplete="email" required /></label>
           <label>Password<input name="password" type="password" autoComplete="current-password" required /></label>
           <SubmitButton label="Sign in" pending="Signing in…" />
+          <details id="resend" open={!!searchParams.resent}>
+            <summary className="muted" style={{ fontSize: 14 }}>Did not get the confirmation email?</summary>
+            <p className="muted" style={{ margin: '8px 0' }}>Check your spam or promotions folder first. Then enter your email to get a new link.</p>
+          </details>
           <p className="muted" style={{ margin: 0 }}>Need help? WhatsApp the office on <a href="https://wa.me/263771331008">+263 77 133 1008</a>.</p>
         </form>
       </div>
+      <form action={resendConfirmation} className="card stack" style={{ maxWidth: 520, margin: '16px auto 0' }}>
+        <b>Resend my confirmation link</b>
+        <label>Email you signed up with<input name="email" type="email" required autoComplete="email" /></label>
+        <SubmitButton className="ghost" label="Send a new link" pending="Sending…" />
+        {searchParams.resent && <p className="notice" role="status" style={{ margin: 0 }}>If that email has an unconfirmed account, a new link is on its way. Check spam too.</p>}
+      </form>
     </div>
   );
 }

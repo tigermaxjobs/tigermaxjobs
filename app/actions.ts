@@ -19,7 +19,8 @@ export async function signUp(f: FormData) {
     email: s(f, 'email'), password: s(f, 'password'),
     options: { data: { role, full_name: s(f, 'full_name') }, emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/login${s(f, 'next').startsWith('/') ? `?next=${encodeURIComponent(s(f, 'next'))}` : ''}` },
   });
-  if (error) redirect('/login?error=' + encodeURIComponent(error.message));
+  if (error) redirect('/login?error=' + encodeURIComponent(/rate limit|security purposes/i.test(error.message)
+    ? 'Too many sign-ups in a short time. Please wait one minute and try again.' : error.message) + '#create');
   redirect(`/login?check=1&as=${role}${s(f, 'next').startsWith('/') ? `&next=${encodeURIComponent(s(f, 'next'))}` : ''}#create`);
 }
 
@@ -31,6 +32,14 @@ export async function signIn(f: FormData) {
   const next = s(f, 'next');
   if (next.startsWith('/') && !next.startsWith('//')) redirect(next); // back to the page that asked for sign-in
   redirect(role === 'employer' ? '/employer' : role === 'staff' ? '/admin' : '/candidate');
+}
+
+// Sends the confirmation link again (for people whose first email did not arrive).
+export async function resendConfirmation(f: FormData) {
+  const email = s(f, 'email');
+  const { error } = await userClient().auth.resend({ type: 'signup', email, options: { emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/login` } });
+  if (error) redirect('/login?error=' + encodeURIComponent(/rate limit|security purposes/i.test(error.message) ? 'Please wait a minute before asking for another link.' : error.message) + '#resend');
+  redirect('/login?resent=1#resend');
 }
 
 export async function signOut() {
