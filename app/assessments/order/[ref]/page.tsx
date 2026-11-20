@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { adminClient } from '@/lib/supabase';
-import { paynow } from '@/lib/paynow';
+import { paynowStatus } from '@/lib/paynow';
 import { bankLines, PROOF_WHATSAPP, PROOF_WHATSAPP_LINK } from '@/lib/workshops';
 import { fulfilOrder } from '@/lib/assessments/server';
 import PrintButton from '@/lib/print-button';
@@ -16,8 +16,8 @@ export default async function Order({ params, searchParams }: { params: { ref: s
   if (!o) notFound();
   if (o.status === 'awaiting_payment' && o.poll_url && process.env.PAYNOW_INTEGRATION_ID) {
     try {
-      const st = await paynow().pollTransaction(o.poll_url);
-      if (st?.paid?.()) {
+      const st = await paynowStatus(o.poll_url);
+      if (st.paid) {
         await db.from('assessment_orders').update({ status: 'paid', paid_at: new Date().toISOString(), paid_via: 'paynow' }).eq('id', o.id).eq('status', 'awaiting_payment');
         await fulfilOrder(o.id);
         o = { ...o, status: 'paid', paid_via: 'paynow', paid_at: new Date().toISOString() };

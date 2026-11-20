@@ -1,7 +1,7 @@
 import { notFound } from 'next/navigation';
 import Link from 'next/link';
 import { adminClient } from '@/lib/supabase';
-import { paynow } from '@/lib/paynow';
+import { paynowStatus } from '@/lib/paynow';
 import { bankLines, dateLabel, priceLabel, STATUS_LABEL, PROOF_WHATSAPP, PROOF_WHATSAPP_LINK } from '@/lib/workshops';
 import PrintButton from './print';
 
@@ -16,8 +16,8 @@ export default async function Ticket({ params, searchParams }: { params: { ref: 
   // Back from Paynow, or reopening the link: re-check the payment before showing the status.
   if (r.status === 'awaiting_payment' && r.poll_url && process.env.PAYNOW_INTEGRATION_ID) {
     try {
-      const st = await paynow().pollTransaction(r.poll_url);
-      if (st?.paid?.()) {
+      const st = await paynowStatus(r.poll_url);
+      if (st.paid) {
         await db.from('workshop_registrations').update({ status: 'paid', paid_at: new Date().toISOString(), paid_via: 'paynow' }).eq('id', r.id);
         r = { ...r, status: 'paid', paid_via: 'paynow', paid_at: new Date().toISOString() };
       }

@@ -21,3 +21,19 @@ export function siteUrl() {
 export function payerEmail(email?: string | null) {
   return process.env.PAYNOW_TEST_EMAIL || email || 'admin@tigermaxjobs.com';
 }
+
+// Checks a payment with Paynow. (The paynow npm package's pollTransaction returns an object
+// without paid(), so it can never report a payment as paid; this replaces it.)
+export async function paynowStatus(pollUrl: string): Promise<{ paid: boolean; status: string }> {
+  const res = await fetch(pollUrl, { method: 'POST', cache: 'no-store' });
+  const body = await res.text();
+  const params = new URLSearchParams(body);
+  const status = (params.get('status') || 'unknown').toLowerCase();
+  const hash = params.get('hash') || '';
+  let joined = '';
+  params.forEach((v, k) => { if (k !== 'hash') joined += v; });
+  const { createHash } = await import('crypto');
+  const expected = createHash('sha512').update(joined + (process.env.PAYNOW_INTEGRATION_KEY || '').toLowerCase()).digest('hex').toUpperCase();
+  if (!hash || hash.toUpperCase() !== expected) throw new Error('Paynow status hash did not match');
+  return { paid: ['paid', 'awaiting delivery', 'delivered'].includes(status), status };
+}

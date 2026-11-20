@@ -1,6 +1,6 @@
 import { NextResponse } from 'next/server';
 import { adminClient } from '@/lib/supabase';
-import { paynow } from '@/lib/paynow';
+import { paynowStatus } from '@/lib/paynow';
 import { PLANS, PlanKey } from '@/lib/plans';
 import { fulfilOrder } from '@/lib/assessments/server';
 
@@ -14,16 +14,16 @@ export async function POST(req: Request) {
   if (reference.startsWith('TMJ-WS-')) {
     const { data: r } = await db.from('workshop_registrations').select('id,status,poll_url').eq('reference', reference).single();
     if (!r || r.status === 'paid' || !r.poll_url) return NextResponse.json({ ok: true });
-    const st = await paynow().pollTransaction(r.poll_url);
-    if (st?.paid?.()) await db.from('workshop_registrations').update({ status: 'paid', paid_at: new Date().toISOString(), paid_via: 'paynow' }).eq('id', r.id);
+    const st = await paynowStatus(r.poll_url);
+    if (st.paid) await db.from('workshop_registrations').update({ status: 'paid', paid_at: new Date().toISOString(), paid_via: 'paynow' }).eq('id', r.id);
     return NextResponse.json({ ok: true });
   }
   // Career Intelligence orders (sittings, packs, certificates, employer group packs)
   if (reference.startsWith('TMJ-AS-')) {
     const { data: o } = await db.from('assessment_orders').select('id,status,poll_url').eq('reference', reference).single();
     if (!o || o.status !== 'awaiting_payment' || !o.poll_url) return NextResponse.json({ ok: true });
-    const st = await paynow().pollTransaction(o.poll_url);
-    if (st?.paid?.()) {
+    const st = await paynowStatus(o.poll_url);
+    if (st.paid) {
       await db.from('assessment_orders').update({ status: 'paid', paid_at: new Date().toISOString(), paid_via: 'paynow' }).eq('id', o.id).eq('status', 'awaiting_payment');
       await fulfilOrder(o.id);
     }
@@ -31,9 +31,9 @@ export async function POST(req: Request) {
   }
   const { data: pay } = await db.from('payments').select('*').eq('reference', reference).single();
   if (!pay || pay.status === 'paid') return NextResponse.json({ ok: true });
-  const status = await paynow().pollTransaction(pay.poll_url);
-  if (!status?.paid?.()) {
-    await db.from('payments').update({ status: status?.status ?? 'unknown' }).eq('id', pay.id);
+  const status = await paynowStatus(pay.poll_url);
+  if (!status.paid) {
+    await db.from('payments').update({ status: status.status }).eq('id', pay.id);
     return NextResponse.json({ ok: true });
   }
   if (pay.candidate_id) {
