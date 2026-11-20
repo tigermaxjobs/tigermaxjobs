@@ -14,6 +14,7 @@ export const metadata = {
 const COMPETENCIES = ['Communication', 'Numeracy', 'Digital skills', 'Teamwork', 'Problem solving', 'Customer service', 'Leadership', 'Technical / trade skill'];
 
 export default async function Assessments({ searchParams }: { searchParams: Record<string, string> }) {
+  const voucherCode = (searchParams.code || '').toUpperCase().replace(/[^A-Z0-9-]/g, '').slice(0, 20);
   const { user } = await currentUser();
   const db = adminClient();
   const [{ data: val }, consent, credits, attempts, evidence] = await Promise.all([
@@ -152,11 +153,12 @@ export default async function Assessments({ searchParams }: { searchParams: Reco
 
       <div className="grid2" style={{ marginTop: 24 }}>
         <form action={redeemVoucher} className="card stack" id="voucher">
-          <h3 style={{ margin: 0 }}>Have a code from an employer or programme?</h3>
-          <p className="muted" style={{ margin: 0 }}>Organisations fund group packs for recruitment, reskilling, upskilling and retention. A code gives you the Full Career Intelligence pack.</p>
-          <label>Code<input name="code" placeholder="TMX-XXXX-XXXX" required /></label>
-          <label className="row" style={{ display: 'flex', fontWeight: 400 }}><input type="checkbox" name="share" defaultChecked /> Share my progress (tests completed and pending) and my certificates with the organisation that gave me this code.</label>
-          {user ? <button>Redeem code</button> : <Link className="btn" href="/login?as=candidate&next=/assessments%23voucher">Sign in to redeem</Link>}
+          <h3 style={{ margin: 0 }}>Have a voucher code?</h3>
+          <p className="muted" style={{ margin: 0 }}>Redeem a Tigermax voucher, or a code from an employer or programme. The tests on your voucher are added to your account straight away.</p>
+          <label>Code<input name="code" placeholder="TMX-XXXX-XXXX" defaultValue={voucherCode} required /></label>
+          <label className="row" style={{ display: 'flex', fontWeight: 400 }}><input type="checkbox" name="share" defaultChecked /> If an employer or programme gave me this code, share my progress (tests completed and pending) and my certificates with them.</label>
+          {user ? <button className="gold">Redeem code</button> : <Link className="btn gold" href={`/signup?as=candidate&next=${encodeURIComponent(`/assessments?code=${voucherCode}#voucher`)}`}>Sign up free to redeem</Link>}
+          {!user && <p className="muted" style={{ margin: 0 }}>Already have an account? <Link href={`/login?as=candidate&next=${encodeURIComponent(`/assessments?code=${voucherCode}#voucher`)}`}>Sign in</Link></p>}
         </form>
 
         <div className="card" id="evidence">
