@@ -1,7 +1,7 @@
 import { NextResponse } from 'next/server';
 import { adminClient } from '@/lib/supabase';
 import { paynowStatus } from '@/lib/paynow';
-import { PLANS, PlanKey } from '@/lib/plans';
+import { settlePayment } from '@/lib/payments';
 import { fulfilOrder } from '@/lib/assessments/server';
 
 // Paynow calls this when a payment status changes. We re-check the status with Paynow before crediting.
@@ -29,24 +29,7 @@ export async function POST(req: Request) {
     }
     return NextResponse.json({ ok: true });
   }
-  const { data: pay } = await db.from('payments').select('*').eq('reference', reference).single();
-  if (!pay || pay.status === 'paid') return NextResponse.json({ ok: true });
-  const status = await paynowStatus(pay.poll_url);
-  if (!status.paid) {
-    await db.from('payments').update({ status: status.status }).eq('id', pay.id);
-    return NextResponse.json({ ok: true });
-  }
-  if (pay.candidate_id) {
-    await db.from('payments').update({ status: 'paid', paid_at: new Date().toISOString() }).eq('id', pay.id);
-    await db.from('candidates').update({ offshore_registered_at: new Date().toISOString(), modes: ['onsite', 'remote', 'offshore'] }).eq('id', pay.candidate_id);
-    return NextResponse.json({ ok: true });
-  }
-  const plan = PLANS[pay.plan as PlanKey];
-  const { data: e } = await db.from('employers').select('listing_credits').eq('id', pay.employer_id).single();
-  await db.from('payments').update({ status: 'paid', paid_at: new Date().toISOString() }).eq('id', pay.id);
-  await db.from('employers').update({
-    listing_credits: (e?.listing_credits ?? 0) + plan.credits, plan: pay.plan,
-    ...(plan.managed ? { managed_service: true } : {}),
-  }).eq('id', pay.employer_id);
+  // Employer listings, offshore registration and CV services (all in the payments table)
+  await settlePayment(reference);
   return NextResponse.json({ ok: true });
 }

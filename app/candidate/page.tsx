@@ -1,9 +1,10 @@
 import { redirect } from 'next/navigation';
 import Link from 'next/link';
 import { currentUser } from '@/lib/supabase';
-import { saveCandidate, startCandidatePayment, setHireStatus, saveNotes } from '@/app/actions';
+import { saveCandidate, setHireStatus, saveNotes } from '@/app/actions';
 import { CANDIDATE_FEES } from '@/lib/plans';
 import CareerSection from './career';
+import CareerAds from '@/lib/ads';
 
 export const dynamic = 'force-dynamic';
 
@@ -42,7 +43,8 @@ export default async function Candidate({ searchParams }: { searchParams: Record
   const answers: Record<string, string> = c?.gap_answers ?? {};
   return (
     <>
-      {searchParams.welcome && <p className="notice">Your account is confirmed. Welcome to Tigermax Jobs. Start with your CV profile below.</p>}
+      {searchParams.welcome && <p className="notice">Your account is ready. Welcome to Tigermax Jobs. Start with <a href="#cv">your CV profile</a> below.</p>}
+      {searchParams.pw && <p className="notice">Your new password is saved.</p>}
       {searchParams.error && <p className="notice">{searchParams.error}</p>}
       {searchParams.saved && <p className="notice">Saved. We will match you to new jobs every day.</p>}
       {searchParams.applied && <p className="notice">Application recorded. You can follow it below.</p>}
@@ -51,6 +53,8 @@ export default async function Candidate({ searchParams }: { searchParams: Record
       {statusDue && !searchParams.status && (
         <p className="notice"><b>Please confirm your status.</b> It has been more than {STATUS_CHECK_DAYS} days since you last confirmed whether you are open for hire. Choose an option in &ldquo;My status&rdquo; below so we only send you jobs you want.</p>
       )}
+      <CareerAds back="/candidate" />
+
       {c?.apply_alias && <p className="muted">Your application address: <b>{c.apply_alias}@{process.env.MAILGUN_DOMAIN}</b>. Employer replies to it are forwarded to {c.email}.</p>}
 
       {c && <>
@@ -112,25 +116,21 @@ export default async function Candidate({ searchParams }: { searchParams: Record
       <CareerSection userId={user.id} email={user.email || ''} />
 
       <h2 id="offshore">Offshore &amp; online placement</h2>
-      {searchParams.paid && <p className="notice">Thank you. Your registration is confirmed as soon as Paynow confirms the payment. Our team will contact you.</p>}
       {c?.offshore_registered_at ? (
         <div className="card"><span className="tag gold">Registered</span>
           <p style={{ marginBottom: 0 }}>You are registered for offshore and online placement since {new Date(c.offshore_registered_at).toLocaleDateString('en-GB')}. Our team will contact you about verified jobs outside Zimbabwe.</p></div>
       ) : (
-        <form action={startCandidatePayment} className="card stack">
+        <div className="card stack">
           <div className="row" style={{ justifyContent: 'space-between' }}>
-            <div><b>{CANDIDATE_FEES.offshore.name}</b>
-              <p className="muted" style={{ margin: '4px 0 0' }}>We look into jobs outside Zimbabwe, verify they are legitimate, facilitate review by the Office of the President and Cabinet (OPC), and handle other logistics until you travel and start work. Additional agency fees may apply.</p></div>
+            <div style={{ flex: 1, minWidth: 220 }}><b>{CANDIDATE_FEES.offshore.name}</b>
+              <p className="muted" style={{ margin: '4px 0 0' }}>{CANDIDATE_FEES.offshore.blurb}</p></div>
             <div style={{ fontSize: 30, fontWeight: 800 }}>US${CANDIDATE_FEES.offshore.amount}</div>
           </div>
-          <label className="row" style={{ display: 'flex' }}><input type="checkbox" name="agree" required style={{ width: 'auto' }} />
-            I understand the US${CANDIDATE_FEES.offshore.amount} registration fee is non-refundable and that additional agency fees may apply.</label>
-          <div className="row"><button className="gold">Pay with Paynow</button><span className="muted">EcoCash, Visa/Mastercard</span></div>
-          <p className="muted" style={{ margin: 0 }}>Payments are processed by Paynow through our payments partner, Caselink Zimbabwe.</p>
-        </form>
+          <div className="row"><Link className="btn gold" href="/pay/offshore?back=%2Fcandidate%23offshore">Register &amp; pay</Link><span className="muted">EcoCash, Visa/Mastercard</span></div>
+        </div>
       )}
 
-      <h2>My CV profile</h2>
+      <h2 id="cv">My CV profile</h2>
       <form action={saveCandidate} className="card stack">
         <div className="grid2">
           <label>Full name<input name="full_name" defaultValue={c?.full_name ?? ''} required /></label>

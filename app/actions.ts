@@ -3,8 +3,8 @@ import { redirect } from 'next/navigation';
 import { revalidatePath } from 'next/cache';
 import { userClient, currentUser, adminClient } from '@/lib/supabase';
 import { makeAlias } from '@/lib/mail';
-import { PLANS, PlanKey, CANDIDATE_FEES } from '@/lib/plans';
-import { paynow, payerEmail } from '@/lib/paynow';
+import { PLANS, PlanKey, CANDIDATE_FEES, type CandidateFeeKey } from '@/lib/plans';
+import { paynow, payerEmail, siteUrl } from '@/lib/paynow';
 import { sendPrepared } from '@/lib/apply';
 import { extractCvText } from '@/lib/cvtext';
 
@@ -12,57 +12,109 @@ const s = (f: FormData, k: string) => String(f.get(k) ?? '').trim();
 const list = (v: string) => v.split(/\n|;/).map(x => x.trim()).filter(Boolean);
 
 // ---------- Auth ----------
+// Sign in, sign up, forgot password and reset password each have their own page (/login, /signup,
+// /forgot-password, /reset-password). After success people go back to the page that sent them (?next=).
+const safeNext = (v: string) => (v.startsWith('/') && !v.startsWith('//') ? v : '');
+const withNext = (path: string, next: string, extra = '') => {
+  const q = new URLSearchParams();
+  if (extra) new URLSearchParams(extra).forEach((v, k) => q.set(k, v));
+  if (next) q.set('next', next);
+  const qs = q.toString();
+  return qs ? `${path}?${qs}` : path;
+};
+
+const landing = async (next: string, welcome = false) => {
+  if (safeNext(next)) redirect(next);
+  const { role } = await currentUser();
+  redirect(role === 'employer' ? '/employer' : role === 'staff' ? '/admin' : welcome ? '/candidate?welcome=1' : '/candidate');
+};
+
+// Creates the account straight away (no email confirmation). One email = one account.
 export async function signUp(f: FormData) {
-  const sb = userClient();
   const role = s(f, 'role') === 'employer' ? 'employer' : 'candidate';
-  const { error } = await sb.auth.signUp({
-    email: s(f, 'email'), password: s(f, 'password'),
-    options: { data: { role, full_name: s(f, 'full_name') }, emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/login${s(f, 'next').startsWith('/') ? `?next=${encodeURIComponent(s(f, 'next'))}` : ''}` },
+  const next = safeNext(s(f, 'next'));
+  const email = s(f, 'email').toLowerCase();
+  const full_name = s(f, 'full_name');
+  const password = String(f.get('password') ?? '');
+  const back = (msg: string) => redirect(withNext('/signup', next, `as=${role}&error=${encodeURIComponent(msg)}`));
+  if (!f.get('details_correct')) back('Please tick the box to confirm your details are correct.');
+  if (!full_name) back('Please enter your full name.');
+  if (!/^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(email)) back('Please enter a valid email address.');
+  if (password.length < 8) back('Your password must be at least 8 characters.');
+  if (password !== String(f.get('password2') ?? '')) back('The two passwords do not match.');
+
+  const { error } = await adminClient().auth.admin.createUser({
+    email, password, email_confirm: true, user_metadata: { role, full_name, details_confirmed_at: new Date().toISOString() },
   });
-  if (error) redirect('/login?error=' + encodeURIComponent(/rate limit|security purposes/i.test(error.message)
-    ? 'Too many sign-ups in a short time. Please wait one minute and try again.' : error.message) + '#create');
-  redirect(`/login?check=1&as=${role}${s(f, 'next').startsWith('/') ? `&next=${encodeURIComponent(s(f, 'next'))}` : ''}#create`);
+  if (error) {
+    if (/already|registered|exists/i.test(error.message) || (error as any).code === 'email_exists')
+      redirect(withNext('/login', next, `as=${role}&exists=1&email=${encodeURIComponent(email)}`));
+    back(error.message);
+  }
+  const { error: e2 } = await userClient().auth.signInWithPassword({ email, password });
+  if (e2) redirect(withNext('/login', next, `as=${role}&email=${encodeURIComponent(email)}`));
+  await landing(next, true);
 }
 
 export async function signIn(f: FormData) {
-  const sb = userClient();
-  const { error } = await sb.auth.signInWithPassword({ email: s(f, 'email'), password: s(f, 'password') });
-  if (error) redirect('/login?error=' + encodeURIComponent(error.message));
-  const { role } = await currentUser();
-  const next = s(f, 'next');
-  if (next.startsWith('/') && !next.startsWith('//')) redirect(next); // back to the page that asked for sign-in
-  redirect(role === 'employer' ? '/employer' : role === 'staff' ? '/admin' : '/candidate');
+  const next = safeNext(s(f, 'next'));
+  const email = s(f, 'email').toLowerCase();
+  const { error } = await userClient().auth.signInWithPassword({ email, password: String(f.get('password') ?? '') });
+  if (error) {
+    const msg = /invalid login credentials/i.test(error.message) ? 'Wrong email or password. Check them, or reset your password below.'
+      : /not confirmed/i.test(error.message) ? 'Your account needs activating. WhatsApp the office on +263 77 133 1008 and we will activate it straight away.'
+      : error.message;
+    redirect(withNext('/login', next, `error=${encodeURIComponent(msg)}&email=${encodeURIComponent(email)}`));
+  }
+  await landing(next);
 }
 
-const landing = async (next: string) => {
-  if (next.startsWith('/') && !next.startsWith('//')) redirect(next);
-  const { role } = await currentUser();
-  redirect(role === 'employer' ? '/employer' : role === 'staff' ? '/admin' : '/candidate?welcome=1');
-};
+// Sends a reset link to the email the account was registered with. The page always shows the same
+// message, so it does not reveal which emails have accounts.
+export async function requestPasswordReset(f: FormData) {
+  const email = s(f, 'email').toLowerCase();
+  const next = safeNext(s(f, 'next'));
+  if (email) {
+    const { error } = await userClient().auth.resetPasswordForEmail(email, { redirectTo: `${siteUrl()}/reset-password` });
+    if (error && /rate limit|security purposes/i.test(error.message))
+      redirect(withNext('/forgot-password', next, `error=${encodeURIComponent('Please wait a minute before asking for another link.')}`));
+  }
+  redirect(withNext('/forgot-password', next, `sent=1&email=${encodeURIComponent(email)}`));
+}
 
-// Confirmation from the email button (token hash) – runs only when the person taps "Confirm my account".
+// Sets the new password from the reset link (token_hash from our email template, or code from the default one).
+export async function updatePassword(f: FormData) {
+  const sb = userClient();
+  const token_hash = s(f, 'token_hash'), code = s(f, 'code');
+  const password = String(f.get('password') ?? '');
+  const keep = new URLSearchParams();
+  if (token_hash) keep.set('token_hash', token_hash);
+  if (code) keep.set('code', code);
+  const back = (msg: string) => redirect(`/reset-password?${keep.toString()}&error=${encodeURIComponent(msg)}`);
+  if (password.length < 8) back('Your new password must be at least 8 characters.');
+  if (password !== String(f.get('password2') ?? '')) back('The two passwords do not match.');
+  if (token_hash) {
+    const { error } = await sb.auth.verifyOtp({ token_hash, type: 'recovery' });
+    if (error) redirect('/forgot-password?error=' + encodeURIComponent('That reset link has expired or was already used. Request a new one below.'));
+  } else if (code) {
+    const { error } = await sb.auth.exchangeCodeForSession(code);
+    if (error) redirect('/forgot-password?error=' + encodeURIComponent('That reset link has expired or was opened on a different device. Request a new one below and open it on this device.'));
+  } else {
+    const { data } = await sb.auth.getUser();
+    if (!data.user) redirect('/forgot-password?error=' + encodeURIComponent('Request a reset link first.'));
+  }
+  const { error } = await sb.auth.updateUser({ password });
+  if (error) back(error.message);
+  const { role } = await currentUser();
+  redirect(role === 'employer' ? '/employer?pw=1' : role === 'staff' ? '/admin' : '/candidate?pw=1');
+}
+
+// Old confirmation emails still link to /auth/confirm; this keeps those links working.
 export async function confirmEmail(f: FormData) {
   const type = (['signup', 'email', 'invite', 'magiclink', 'recovery', 'email_change'].includes(s(f, 'type')) ? s(f, 'type') : 'signup') as any;
   const { error } = await userClient().auth.verifyOtp({ token_hash: s(f, 'token_hash'), type });
-  if (error) redirect('/login?error=' + encodeURIComponent('That link has expired or was already used. If you can sign in, you are confirmed. Otherwise request a new link below and use the newest email.') + '#resend');
+  if (error) redirect('/login?error=' + encodeURIComponent('Your account is already active. Sign in with your email and password.'));
   await landing(s(f, 'next'));
-}
-
-// Confirmation by typing the 6-digit code from the email.
-export async function confirmCode(f: FormData) {
-  const email = s(f, 'email'), token = s(f, 'code').replace(/\D/g, '');
-  let { error } = await userClient().auth.verifyOtp({ email, token, type: 'signup' });
-  if (error) ({ error } = await userClient().auth.verifyOtp({ email, token, type: 'email' }));
-  if (error) redirect('/login?error=' + encodeURIComponent('That code is wrong or has expired. Use the code from the newest email, or request a new one below.') + '#code');
-  await landing(s(f, 'next'));
-}
-
-// Sends the confirmation link again (for people whose first email did not arrive).
-export async function resendConfirmation(f: FormData) {
-  const email = s(f, 'email');
-  const { error } = await userClient().auth.resend({ type: 'signup', email, options: { emailRedirectTo: `${process.env.NEXT_PUBLIC_SITE_URL}/candidate` } });
-  if (error) redirect('/login?error=' + encodeURIComponent(/rate limit|security purposes/i.test(error.message) ? 'Please wait a minute before asking for another link.' : error.message) + '#resend');
-  redirect('/login?resent=1#resend');
 }
 
 export async function signOut() {
@@ -216,33 +268,42 @@ export async function startPayment(f: FormData) {
   const { data: e } = await sb.from('employers').select('id, contact_email').eq('owner_id', user.id).single();
   if (!e) redirect('/employer');
   const reference = `TMJ-${Date.now().toString(36).toUpperCase()}`;
-  const pn = paynow();
+  const pn = paynow(`/pay/status/${reference}?back=${encodeURIComponent('/employer/billing')}`);
   const payment = pn.createPayment(reference, payerEmail(e.contact_email || user.email));
   payment.add(p.name, p.amount);
   const resp = await pn.send(payment);
   if (!resp?.success) redirect('/employer/billing?error=' + encodeURIComponent(resp?.error || 'Paynow error'));
-  await adminClient().from('payments').insert({ employer_id: e.id, plan, amount: p.amount, reference, poll_url: resp.pollUrl });
+  await adminClient().from('payments').insert({ employer_id: e.id, user_id: user.id, plan, amount: p.amount, reference, poll_url: resp.pollUrl, payer_email: e.contact_email || user.email });
   redirect(resp.redirectUrl);
 }
 
-// Job seeker pays the non-refundable offshore registration fee.
+// Job seeker pays for a service (offshore registration, CV writing) from its own page, /pay/<item>.
+// Paynow sends them back to /pay/status/<reference>, which links back to where they started.
 export async function startCandidatePayment(f: FormData) {
+  const item = s(f, 'item') as CandidateFeeKey;
+  const fee = CANDIDATE_FEES[item];
+  if (!fee) redirect('/candidate');
+  const page = `/pay/${item}`;
+  const ret = safeNext(s(f, 'back')) || '/candidate';
+  const back = (msg: string) => redirect(`${page}?back=${encodeURIComponent(ret)}&error=${encodeURIComponent(msg)}`);
   const { sb, user, role } = await currentUser();
-  if (!user) redirect('/login?as=candidate');
-  if (role !== 'candidate') redirect('/');
-  const back = '/candidate';
-  if (s(f, 'agree') !== 'on') redirect(back + '?error=' + encodeURIComponent('Please confirm you understand the fee is non-refundable.') + '#offshore');
-  if (!process.env.PAYNOW_INTEGRATION_ID) redirect(back + '?error=' + encodeURIComponent('Online payment is being set up. Please contact the Tigermax office on WhatsApp +263 77 133 1008 to register.') + '#offshore');
-  const fee = CANDIDATE_FEES.offshore;
-  const { data: c } = await sb.from('candidates').select('id, email').eq('user_id', user.id).maybeSingle();
-  if (!c) redirect(back + '?error=' + encodeURIComponent('Save your CV profile first, then register.') + '#offshore');
-  const reference = `TMJ-OFF-${Date.now().toString(36).toUpperCase()}`;
-  const pn = paynow('/candidate?paid=1#offshore');
-  const payment = pn.createPayment(reference, payerEmail(c.email || user.email));
+  if (!user) redirect(`/login?as=candidate&next=${encodeURIComponent(page)}`);
+  if (role !== 'candidate' && role !== 'staff') back('This service is for job seekers. Sign in with your job seeker account.');
+  if (s(f, 'agree') !== 'on') back('Please tick the box to confirm before paying.');
+  if (!process.env.PAYNOW_INTEGRATION_ID) back('Online payment is being set up. Please WhatsApp the Tigermax office on +263 77 133 1008 to pay.');
+  const { data: c } = await sb.from('candidates').select('id, email, full_name').eq('user_id', user.id).maybeSingle();
+  if (item === 'offshore' && !c) back('Save your CV profile first, then register.');
+  const { data: prof } = await sb.from('profiles').select('full_name').eq('id', user.id).maybeSingle();
+  const reference = `TMJ-${item === 'offshore' ? 'OFF' : 'CV'}-${Date.now().toString(36).toUpperCase()}`;
+  const pn = paynow(`/pay/status/${reference}?back=${encodeURIComponent(ret)}`);
+  const payment = pn.createPayment(reference, payerEmail(c?.email || user.email));
   payment.add(fee.name, fee.amount);
   const resp = await pn.send(payment);
-  if (!resp?.success) redirect(back + '?error=' + encodeURIComponent(resp?.error || 'Paynow error') + '#offshore');
-  await adminClient().from('payments').insert({ candidate_id: c.id, plan: 'offshore', amount: fee.amount, reference, poll_url: resp.pollUrl });
+  if (!resp?.success) back(resp?.error || 'Paynow could not start the payment. Please try again.');
+  await adminClient().from('payments').insert({
+    candidate_id: c?.id ?? null, user_id: user.id, plan: item, amount: fee.amount, reference, poll_url: resp.pollUrl,
+    payer_name: c?.full_name || prof?.full_name || null, payer_email: user.email,
+  });
   redirect(resp.redirectUrl);
 }
 

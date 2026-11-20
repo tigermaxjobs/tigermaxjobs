@@ -1,64 +1,47 @@
-import { signIn, signUp, resendConfirmation, confirmCode } from '@/app/actions';
+import Link from 'next/link';
+import { redirect } from 'next/navigation';
+import { signIn } from '@/app/actions';
+import { currentUser } from '@/lib/supabase';
 import SubmitButton from '@/lib/submit-button';
 
-export default function Login({ searchParams }: { searchParams: { as?: string; error?: string; check?: string; next?: string; resent?: string } }) {
+export const dynamic = 'force-dynamic';
+export const metadata = { title: 'Sign in — Tigermax Jobs' };
+
+type P = { as?: string; error?: string; next?: string; email?: string; exists?: string; pw?: string };
+const safe = (n?: string) => (n && n.startsWith('/') && !n.startsWith('//') ? n : '');
+
+// Sign-in page only. Creating an account is on /signup; forgotten passwords on /forgot-password.
+export default async function Login({ searchParams }: { searchParams: P }) {
+  const next = safe(searchParams.next);
+  const { user, role: current } = await currentUser();
+  if (user) redirect(next || (current === 'employer' ? '/employer' : current === 'staff' ? '/admin' : '/candidate'));
   const role = searchParams.as === 'employer' ? 'employer' : 'candidate';
-  const next = searchParams.next && searchParams.next.startsWith('/') && !searchParams.next.startsWith('//') ? searchParams.next : '';
+  const q = (extra: Record<string, string> = {}) => {
+    const p = new URLSearchParams({ ...(searchParams.as ? { as: role } : {}), ...(next ? { next } : {}), ...extra });
+    const s = p.toString();
+    return s ? `?${s}` : '';
+  };
   return (
-    <div className="auth">
+    <div className="auth" style={{ maxWidth: 460 }}>
       <div className="center">
-        <p className="eyebrow">{role === 'employer' ? 'For employers' : 'Free to join'}</p>
-        <h1 className="h-lg">{role === 'employer' ? 'Hire with Tigermax.' : 'Welcome to Tigermax Jobs.'}</h1>
-        <p className="lead">{role === 'employer'
-          ? 'Create your company account, get verified, and start receiving matched candidates.'
-          : 'Create your account, add your CV, and we start matching you tomorrow morning.'}</p>
+        <p className="eyebrow">{role === 'employer' ? 'For employers' : 'Welcome back'}</p>
+        <h1 className="h-lg">Sign in.</h1>
       </div>
+      {searchParams.exists && <p className="notice">This email already has a Tigermax account. Sign in below, or <Link href={`/forgot-password${q({ email: searchParams.email || '' })}`}>reset your password</Link> if you have forgotten it.</p>}
+      {searchParams.pw && <p className="notice">Your password has been changed. Sign in with your new password.</p>}
       {searchParams.error && <p className="notice">{searchParams.error}</p>}
-      <div className="grid2">
-        <form action={signUp} className="card stack" id="create">
-          <h2 style={{ margin: 0 }}>Create an account</h2>
-          {next && <input type="hidden" name="next" value={next} />}
-          <label>I am
-            <select name="role" defaultValue={role}>
-              <option value="candidate">A job seeker (free)</option>
-              <option value="employer">An employer</option>
-            </select>
-          </label>
-          <label>Full name<input name="full_name" autoComplete="name" required /></label>
-          <label>Email<input name="email" type="email" autoComplete="email" required /></label>
-          <label>Password<input name="password" type="password" minLength={8} autoComplete="new-password" required /></label>
-          <SubmitButton className="gold" label="Create account" pending="Creating your account…" />
-          {searchParams.check && <p className="notice" role="status" style={{ margin: 0 }}>Check your email to confirm your account, then sign in. Use the newest email if you got more than one.</p>}
-          <p className="muted" style={{ margin: 0 }}>By joining you agree to our <a href="/privacy">privacy notice</a>.</p>
-        </form>
-        <form action={signIn} className="card stack">
-          <h2 style={{ margin: 0 }}>Sign in</h2>
-          {next && <input type="hidden" name="next" value={next} />}
-          <label>Email<input name="email" type="email" autoComplete="email" required /></label>
-          <label>Password<input name="password" type="password" autoComplete="current-password" required /></label>
-          <SubmitButton label="Sign in" pending="Signing in…" />
-          <details id="resend" open={!!searchParams.resent}>
-            <summary className="muted" style={{ fontSize: 14 }}>Did not get the confirmation email?</summary>
-            <p className="muted" style={{ margin: '8px 0' }}>Check your spam or promotions folder first. Then enter your email to get a new link.</p>
-          </details>
-          <p className="muted" style={{ margin: 0 }}>Need help? WhatsApp the office on <a href="https://wa.me/263771331008">+263 77 133 1008</a>.</p>
-        </form>
-      </div>
-      <form action={confirmCode} className="card stack" id="code" style={{ maxWidth: 520, margin: '16px auto 0' }}>
-        <b>Have a 6-digit code from our email?</b>
+      <form action={signIn} className="card stack">
         {next && <input type="hidden" name="next" value={next} />}
-        <div className="grid2">
-          <label>Email<input name="email" type="email" required autoComplete="email" /></label>
-          <label>Code<input name="code" inputMode="numeric" pattern="[0-9 ]{6,8}" required autoComplete="one-time-code" placeholder="123456" /></label>
-        </div>
-        <SubmitButton className="gold" label="Confirm my account" pending="Confirming…" />
+        <label>Email<input name="email" type="email" autoComplete="email" defaultValue={searchParams.email || ''} required /></label>
+        <label>Password<input name="password" type="password" autoComplete="current-password" required /></label>
+        <SubmitButton className="gold" label="Sign in" pending="Signing in…" />
+        <p style={{ margin: 0, textAlign: 'right' }}><Link href={`/forgot-password${q()}`}>Forgot password?</Link></p>
       </form>
-      <form action={resendConfirmation} className="card stack" style={{ maxWidth: 520, margin: '16px auto 0' }}>
-        <b>Resend my confirmation link</b>
-        <label>Email you signed up with<input name="email" type="email" required autoComplete="email" /></label>
-        <SubmitButton className="ghost" label="Send a new link" pending="Sending…" />
-        {searchParams.resent && <p className="notice" role="status" style={{ margin: 0 }}>If that email has an unconfirmed account, a new link is on its way. Check spam too.</p>}
-      </form>
+      <div className="card center">
+        <p style={{ margin: '0 0 10px' }}>New to Tigermax Jobs?</p>
+        <Link className="btn ghost" href={`/signup${q()}`}>Create a free account</Link>
+      </div>
+      <p className="muted center">Need help? WhatsApp the office on <a href="https://wa.me/263771331008">+263 77 133 1008</a>.</p>
     </div>
   );
 }

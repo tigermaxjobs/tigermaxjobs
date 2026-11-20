@@ -14,7 +14,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
   const dash = role === 'candidate' ? { href: '/candidate', label: 'My CV' }
     : role === 'employer' ? { href: '/employer', label: 'Dashboard' }
     : role === 'staff' ? { href: '/admin', label: 'Office' }
-    : { href: '/login?as=candidate', label: 'Upload CV' };
+    : { href: '/signup?as=candidate', label: 'Upload CV' };
   return (
     <html lang="en">
       <head>
@@ -62,7 +62,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             <div>
               <h4>Job seekers</h4>
               <Link href="/jobs">Browse jobs</Link>
-              <Link href="/login?as=candidate">Upload my CV</Link>
+              <Link href="/signup?as=candidate">Upload my CV</Link>
               <Link href="/#how">How auto-apply works</Link>
               <Link href="/assessments">Career Intelligence tests</Link>
               <Link href="/workshops">Workshops & events</Link>
@@ -70,7 +70,7 @@ export default async function RootLayout({ children }: { children: React.ReactNo
             </div>
             <div>
               <h4>Employers</h4>
-              <Link href="/login?as=employer">Post a job</Link>
+              <Link href="/signup?as=employer">Post a job</Link>
               <Link href="/assessments#employers">Assess your candidates</Link>
               <Link href="/#employers">Recruitment services</Link>
               <Link href="/#pricing">Pricing</Link>

@@ -22,6 +22,9 @@ export default async function Office({ searchParams }: { searchParams: Record<st
   const { data: bank } = await cvq;
   const { data: offshore } = await sb.from('candidates').select('id,full_name,email,phone,has_passport,offshore_registered_at')
     .not('offshore_registered_at', 'is', null).order('offshore_registered_at', { ascending: false }).limit(100);
+  const { data: cvOrders } = await sb.from('payments').select('reference,plan,amount,status,paid_at,created_at,payer_name,payer_email,candidates(phone)')
+    .in('plan', ['cv_starter', 'cv_revamp']).order('created_at', { ascending: false }).limit(100);
+  const paidCv = (cvOrders || []).filter((o: any) => o.status === 'paid');
   return (
     <>
       {searchParams.sent && <p className="notice">Application sent.</p>}
@@ -49,6 +52,16 @@ export default async function Office({ searchParams }: { searchParams: Record<st
         {(offshore || []).map((c: any) => <tr key={c.id}><td>{c.full_name}</td><td>{c.phone}<div className="muted">{c.email}</div></td>
           <td>{c.has_passport}</td><td>{new Date(c.offshore_registered_at).toLocaleDateString('en-GB')}</td></tr>)}
         {!offshore?.length && <tr><td colSpan={4} className="muted">No paid offshore registrations yet.</td></tr>}
+      </tbody></table></div>
+
+      <h2 id="cv-orders">CV writing orders paid ({paidCv.length})</h2>
+      <div className="card"><table><thead><tr><th>Client</th><th>Service</th><th>Paid</th><th>Ref</th></tr></thead><tbody>
+        {paidCv.map((o: any) => <tr key={o.reference}>
+          <td><b>{o.payer_name || '-'}</b><div className="muted">{o.payer_email}{o.candidates?.phone ? ` · ${o.candidates.phone}` : ''}</div></td>
+          <td>{o.plan === 'cv_revamp' ? 'Know yourself + CV revamp' : 'Winning CV'} · US${Number(o.amount)}</td>
+          <td>{o.paid_at ? new Date(o.paid_at).toLocaleString('en-GB', { timeZone: 'Africa/Harare' }) : ''}</td>
+          <td className="mono">{o.reference}</td></tr>)}
+        {!paidCv.length && <tr><td colSpan={4} className="muted">No paid CV orders yet. Contact each client within one working day of payment.</td></tr>}
       </tbody></table></div>
 
       <h2>Applications ready to send ({ready?.length ?? 0})</h2>

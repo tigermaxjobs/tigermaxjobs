@@ -1,12 +1,13 @@
 import Link from 'next/link';
-import { userClient } from '@/lib/supabase';
+import { currentUser } from '@/lib/supabase';
+import CareerAds from '@/lib/ads';
 import { MODES, JOB_FIELDS, JobCard, type JobRow } from '@/lib/ui';
 
 export const dynamic = 'force-dynamic';
 export const metadata = { title: 'Jobs — Tigermax Jobs' };
 
 export default async function Jobs({ searchParams }: { searchParams: { mode?: string; q?: string } }) {
-  const sb = userClient();
+  const { sb, user, role } = await currentUser();
   const term = (searchParams.q || '').replace(/[%,()]/g, '').trim();
   let q = sb.from('jobs').select(JOB_FIELDS).eq('status', 'live')
     .order('featured', { ascending: false }).order('created_at', { ascending: false }).limit(100);
@@ -38,12 +39,14 @@ export default async function Jobs({ searchParams }: { searchParams: { mode?: st
         {Object.entries(MODES).map(([k, v]) => <Link key={k} href={href(k)} className={searchParams.mode === k ? 'on' : ''}>{v}</Link>)}
       </div>
 
-      {jobs.map(j => <JobCard key={j.id} j={j} />)}
+      {jobs.slice(0, 5).map(j => <JobCard key={j.id} j={j} />)}
+      {role !== 'employer' && role !== 'staff' && <CareerAds back="/jobs" signedIn={!!user} />}
+      {jobs.slice(5).map(j => <JobCard key={j.id} j={j} />)}
       {!jobs.length && (
         <div className="empty">
           <p style={{ fontSize: 19, color: 'var(--ink)', margin: '0 0 6px' }}>No jobs match yet.</p>
           <p style={{ margin: '0 0 18px' }}>New jobs are added every morning. Upload your CV and we will tell you when one fits.</p>
-          <Link className="btn gold" href="/login?as=candidate">Upload my CV, free</Link>
+          <Link className="btn gold" href="/signup?as=candidate">Upload my CV, free</Link>
         </div>
       )}
     </>

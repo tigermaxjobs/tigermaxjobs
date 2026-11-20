@@ -48,7 +48,7 @@ export default async function Home() {
           Tigermax Jobs matches you to new jobs in Zimbabwe, online and abroad every morning, and applies on your behalf. You just prepare for the interview.
         </p>
         <div className="row" style={{ justifyContent: 'center' }}>
-          <Link className="btn gold" href="/login?as=candidate">Upload my CV, free</Link>
+          <Link className="btn gold" href="/signup?as=candidate">Upload my CV, free</Link>
           <Link className="btn ghost" href="/#how">See how it works</Link>
         </div>
         <p className="muted" style={{ marginTop: 14 }}>Free to join. Verified offshore placements from US$240.</p>
@@ -101,7 +101,7 @@ export default async function Home() {
             <p className="lead">We are facilitating the placement of 18,500 young job seekers going through the National Youth Service into jobs at home, online and abroad.</p>
             <div className="pillrow"><span>Disciplined</span><span>Patriotic</span><span>Hard-working</span><span>Youthful</span></div>
             <div className="row" style={{ marginTop: 28 }}>
-              <Link className="btn gold" href="/login?as=employer">Hire NYS talent</Link>
+              <Link className="btn gold" href="/signup?as=employer">Hire NYS talent</Link>
               <a className="btn ghost" style={{ color: '#fff', borderColor: 'rgba(255,255,255,.3)' }} href="https://wa.me/263771331008">Talk to our team</a>
             </div>
           </div>
@@ -175,7 +175,7 @@ export default async function Home() {
               <p className="muted" style={{ margin: 0 }}>Covers sourcing and verifying jobs outside Zimbabwe, facilitating OPC review and other logistics. Additional agency fees may apply.</p>
               <div className="row" style={{ justifyContent: 'center', marginTop: 8 }}>
                 <a className="btn gold" href="https://wa.me/263771331008?text=Hi%20Tigermax%20Jobs%2C%20I%20want%20to%20register%20for%20verified%20offshore%20placement">Register on WhatsApp</a>
-                <Link className="btn ghost" href="/candidate#offshore">Register &amp; pay online</Link>
+                <Link className="btn ghost" href="/pay/offshore?back=%2Fcandidate%23offshore">Register &amp; pay online</Link>
               </div>
             </div>
           </div>
@@ -194,7 +194,7 @@ export default async function Home() {
             <div className="empty">
               <p style={{ fontSize: 19, color: 'var(--ink)', margin: '0 0 6px' }}>New jobs land here every morning.</p>
               <p style={{ margin: '0 0 18px' }}>Upload your CV today and you will be first in line when they do.</p>
-              <Link className="btn gold" href="/login?as=candidate">Upload my CV, free</Link>
+              <Link className="btn gold" href="/signup?as=candidate">Upload my CV, free</Link>
             </div>
           )}
         </div>
@@ -215,7 +215,7 @@ export default async function Home() {
             ))}
           </div>
           <div className="row" style={{ marginTop: 36 }}>
-            <Link className="btn gold" href="/login?as=employer">Post a job</Link>
+            <Link className="btn gold" href="/signup?as=employer">Post a job</Link>
             <a className="btn ghost" style={{ color: '#fff', borderColor: 'rgba(255,255,255,.3)' }} href="https://wa.me/263771331008">Talk to our team</a>
           </div>
         </div>
@@ -235,7 +235,7 @@ export default async function Home() {
               <span className="tag gold" style={{ alignSelf: 'flex-start' }}>Jobs in Zimbabwe</span>
               <div className="amt">Free</div>
               <ul><li>CV bank profile</li><li>Daily job matching</li><li>Automatic applications</li><li>Personal application email</li></ul>
-              <Link className="btn gold" href="/login?as=candidate">Upload my CV</Link>
+              <Link className="btn gold" href="/signup?as=candidate">Upload my CV</Link>
             </div>
             <div className="card price pop reveal">
               <span className="tag gold" style={{ alignSelf: 'flex-start' }}>Online &amp; offshore</span>
@@ -251,7 +251,7 @@ export default async function Home() {
                 {k === 'bundle5' ? <span className="tag gold" style={{ alignSelf: 'flex-start' }}>Best value</span> : <span className="tag" style={{ alignSelf: 'flex-start' }}>Employers</span>}
                 <div className="amt">${p.amount}<small> {p.managed ? 'per role' : 'once'}</small></div>
                 <div style={{ fontWeight: 600 }}>{p.name}</div>
-                <Link className="btn ghost" href="/login?as=employer">Get started</Link>
+                <Link className="btn ghost" href="/signup?as=employer">Get started</Link>
               </div>
             ))}
           </div>
@@ -283,8 +283,8 @@ export default async function Home() {
           <h2 className="h-lg reveal">Your next job could be one upload away.</h2>
           <p className="lead">Join the Tigermax CV bank today. It takes five minutes and it is free.</p>
           <div className="row" style={{ justifyContent: 'center' }}>
-            <Link className="btn gold" href="/login?as=candidate">Upload my CV, free</Link>
-            <Link className="btn ghost" href="/login?as=employer">I am hiring</Link>
+            <Link className="btn gold" href="/signup?as=candidate">Upload my CV, free</Link>
+            <Link className="btn ghost" href="/signup?as=employer">I am hiring</Link>
           </div>
         </div>
       </section>
