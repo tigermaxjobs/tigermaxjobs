@@ -1,5 +1,5 @@
 import { adminClient } from '@/lib/supabase';
-import { paynow } from '@/lib/paynow';
+import { paynow, payerEmail } from '@/lib/paynow';
 
 // Used by /workshops/pay/[ref]: also the shareable "payment link" printed on invoices.
 export async function paynowFor(reference: string): Promise<string> {
@@ -12,7 +12,7 @@ export async function paynowFor(reference: string): Promise<string> {
     return `/workshops/ticket/${reference}?nopaynow=1`;
   }
   const pn = paynow(`/workshops/ticket/${reference}?paid=1`);
-  const payment = pn.createPayment(reference, r.email);
+  const payment = pn.createPayment(reference, payerEmail(r.email));
   payment.add(`${(r as any).workshops?.title || 'Workshop'} – registration`, Number(r.amount));
   const resp = await pn.send(payment);
   if (!resp?.success) return `/workshops/ticket/${reference}?error=${encodeURIComponent(resp?.error || 'Paynow could not start the payment.')}`;

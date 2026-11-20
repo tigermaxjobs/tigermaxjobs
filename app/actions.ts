@@ -4,7 +4,7 @@ import { revalidatePath } from 'next/cache';
 import { userClient, currentUser, adminClient } from '@/lib/supabase';
 import { makeAlias } from '@/lib/mail';
 import { PLANS, PlanKey, CANDIDATE_FEES } from '@/lib/plans';
-import { paynow } from '@/lib/paynow';
+import { paynow, payerEmail } from '@/lib/paynow';
 import { sendPrepared } from '@/lib/apply';
 import { extractCvText } from '@/lib/cvtext';
 
@@ -217,7 +217,7 @@ export async function startPayment(f: FormData) {
   if (!e) redirect('/employer');
   const reference = `TMJ-${Date.now().toString(36).toUpperCase()}`;
   const pn = paynow();
-  const payment = pn.createPayment(reference, e.contact_email || user.email);
+  const payment = pn.createPayment(reference, payerEmail(e.contact_email || user.email));
   payment.add(p.name, p.amount);
   const resp = await pn.send(payment);
   if (!resp?.success) redirect('/employer/billing?error=' + encodeURIComponent(resp?.error || 'Paynow error'));
@@ -238,7 +238,7 @@ export async function startCandidatePayment(f: FormData) {
   if (!c) redirect(back + '?error=' + encodeURIComponent('Save your CV profile first, then register.') + '#offshore');
   const reference = `TMJ-OFF-${Date.now().toString(36).toUpperCase()}`;
   const pn = paynow('/candidate?paid=1#offshore');
-  const payment = pn.createPayment(reference, c.email || user.email);
+  const payment = pn.createPayment(reference, payerEmail(c.email || user.email));
   payment.add(fee.name, fee.amount);
   const resp = await pn.send(payment);
   if (!resp?.success) redirect(back + '?error=' + encodeURIComponent(resp?.error || 'Paynow error') + '#offshore');
